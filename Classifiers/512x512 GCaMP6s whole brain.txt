@@ -1,0 +1,1 @@
+D:\data_output\1_8dfp_ntc3_512_1\suite2p\plane0\iscell.npy

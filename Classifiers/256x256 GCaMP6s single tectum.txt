@@ -1,0 +1,6 @@
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect_ref\suite2p\plane0\iscell.npy
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect+14um\suite2p\plane0\iscell.npy
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect+20um\suite2p\plane0\iscell.npy
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect+30um\suite2p\plane0\iscell.npy
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect-20um\suite2p\plane0\iscell.npy
+D:\data_output\Spatial_mono_noUV0309\mono_noUV_Rtect-40um\suite2p\plane0\iscell.npy
