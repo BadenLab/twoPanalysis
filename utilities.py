@@ -61,7 +61,7 @@ def read_ops(file_path):
 
 
 def interpolate(input_trace, output_trace_resolution):
-    if len(input_trace) > 1:  
+    if input_trace.ndim > 1:  
         interp_list = np.empty((len(input_trace), output_trace_resolution))
         for n, i in enumerate(input_trace):
             x = np.arange(0, len(i))
