@@ -304,6 +304,25 @@ def data_crop(f, trigger, start_buffer, end_buffer):
 
 fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um\suite2p\plane0\F.npy", r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um.npy")
 
+def temporal_alignment(resolution, line_scan_speed, etc...):
+    """
+    Because lines are scanned sequentially, ROI responses will be temporally
+    misaligned (especially for higher resolutions). To re-enable the ability 
+    to correlate the trigger channel with the imaging channel, signals from ROIs
+    will need to be temporally aligned. 
+    
+    
+    Parameters
+    ----------
+    
+
+    Returns
+    -------
+    int
+        DESCRIPTION.
+
+    """
+    return 1
 
 def average_signal(f, trigger, mode):
     """
@@ -378,20 +397,20 @@ def average_signal(f, trigger, mode):
             #     loops_list[rep] = np.transpose(f[:, trig_frames[rep*mode-1]:trig_frames[(mode-1)*rep]])
         return loops_list
         # return nth_f_loop, nth_trig_loop
-    slices  = get_nth_loop(f, trigger, 30, 3, interpolation_granularity = 10000)
+    sliced_traces  = get_nth_loop(f, trigger, 30, 3, interpolation_granularity = 10000)
+
+    averaged_traces = np.average(sliced_traces, axis = 0)
+
     
-    for rep in range(repeats):
-        average_traces = np.empty([repeats, 1, interpolation_granularity])
-        for i in slices[rep]:
-            a
-    
-    average_signal = 1
-    trial_signals_list = np.ones((2, 4))
-    
-    return average_signal, z
+    return averaged_traces, sliced_traces
 
 test1, test2 = average_signal(fs, trig_trace, 30)
 
+plt.plot(test1[0], color = 'r')
+plt.plot(test2[0][0], color = 'b')
+plt.plot(test2[0][1], color = 'b')
+plt.plot(test2[0][2], color = 'b')
+plt.show()
 """
 Resulting files
 ______________________________________________________________________________________________________________________________________________________________
