@@ -26,8 +26,8 @@ def get_imaging_path(path):
     img_path = pathlib.Path(path)
     return img_path
 
-inpt = "test_smh_environment"
-outpt = "test_tiffs_environment"
+inpt = "test_BCs"
+outpt = "test_BCs"
 
 # Work
 ops = s2m.extract_singleplane(r"D:\data_input\{}".format(inpt),
@@ -43,8 +43,10 @@ ops = s2m.extract_singleplane(r"D:\data_input\{}".format(inpt),
 #                             r"D:\data_output",
 #                             "{}".format(outpt),s
 #                             512)
+
 #Laptop
-# s2m.extract_data(r"C:\Users\Simen\Desktop\Suite2P classifier work\data_input\{}".format(inpt),
-#                             r"C:\Users\Simen\Desktop\Suite2P classifier work\data_output",
+# s2m.extract_singleplane(r"C:\Users\Simen\Desktop\{}".format(inpt),
+#                             r"C:\Users\Simen\Desktop",
 #                             "{}".format(outpt),
 #                             256)
+#                             # r"C:\Users\Simen\Desktop\BC testing.npy")

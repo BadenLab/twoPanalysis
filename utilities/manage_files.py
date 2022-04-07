@@ -5,6 +5,12 @@ Created on Thu Jan 20 13:33:04 2022
 @author: SimenLab
 """
 
+"""
+NOTE
+
+Legacy, will be deleted and replaced by 2panalysis.utils
+"""
+
 import pathlib
 
 def get_content(folder_path):

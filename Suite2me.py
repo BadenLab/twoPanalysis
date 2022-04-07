@@ -21,7 +21,13 @@ import shutil
 import time
 
 import Import_Igor
-import options
+import utilities
+
+
+"""Currently hard-coded..."""
+# import options
+import options_BC_testing
+
 """
 Make plotting nice and consistent 
 """
@@ -123,6 +129,8 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
         Name of folder in save_dir algorithm should output to. 
     crop: Int 
         Takes a single intiger and assumes it as squared (i.e. 256 (x 256), 512 (x 512), etc.)
+    ops_path: Path-like
+        Path of options file to use.
     Returns
     -------
     None.
@@ -141,19 +149,22 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
     except FileExistsError:
         probe_path = pathlib.Path(save_dir).joinpath(output_folder)
         print("Data already exists in target output folder, checking if Suite2p-related")
-        time.sleep(.1)
+        time.sleep(.25)
         # Check if folder already exists
         for child in probe_path.iterdir():
             if child == ((output_folder)):
                 print("Suite2p analysis already exists here")
                 sys.exit()
                 # break
-            else:
-                warnings.warn(
-                    "Other content exists in {}".format(
-                        pathlib.Path(save_dir).joinpath(output_folder)
-                    )
-                )
+            if child == str(output_folder.joinpath("suite2p")):
+                print("Here be pirates")
+                sys.exit()
+            # elif: #Seems buggy/not fit for use
+            #     warnings.warn(
+            #         "Other content exists in {}. Consider deleting content.".format(
+            #             pathlib.Path(save_dir).joinpath(output_folder)
+            #         )
+            #     )
                 other_stuff = True
                 time.sleep(.1)
                 # sys.exit()
@@ -230,10 +241,14 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
             ### Step 3.3: Point Suite2p to the right folder for analysis
             # needs to be a dictionary with a list of path(s)
             db = {'data_path': [str(new_single_tiff_folder)], }
-            ops = options.ops
+            
+            """Select ops file (this should not be hard-coded)..."""
+            # ops = options.ops
+            ops = options_BC_testing.ops
+            # ops = np.load(ops_path, allow_pickle=True)
             # if tiff_count > 1:
             #     ops["nplanes"] = tiff_count
-            ops["nplanes"] = 1
+            # ops["nplanes"] = 1
             # ops["classifier_path"] = 0
             # Step 4: Run Suite2p on this newly created folder with corresponding tiff file
             output_ops = gen_ops(ops, db)
@@ -252,7 +267,7 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
     # return output_ops
 
 
-def data_crop(f, trigger, start_buffer, end_buffer, tau = 2):
+def data_crop(f, trigger, start_buffer, end_buffer):
     """
     Crop 
 
@@ -278,29 +293,34 @@ def data_crop(f, trigger, start_buffer, end_buffer, tau = 2):
 
     """
     f_len               = f.shape[1]
-    seconds_to_frames   = 1/tau
+    # seconds_to_frames   = 1/tau
     f_cropped           = f[:, start_buffer:f_len-end_buffer]
     trigger_cropped     = trigger[start_buffer:f_len-end_buffer]
     return f_cropped, trigger_cropped
 
 "Think a decorator is appropriate here, just need to work out how"
 # @data_crop(f, trigger, start_buffer, end_buffer)
+
+
+fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um\suite2p\plane0\F.npy", r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um.npy")
+
+
 def average_signal(f, trigger, mode):
     """
     
 
     Parameters
     ----------
-    f : TYPE
-        DESCRIPTION.
-    trigger : TYPE
-        DESCRIPTION.
+    f : Numpy array
+        The extracted ROI traces represented as an nxm numpy array
+    trigger : Numpy array
+        Trigger signal as a 1xn numpy array
     mode : TYPE
-        DESCRIPTION.
+        The n-th trigger by which to average
 
     Returns
     -------
-    None.
+    average_signal, trial_signals_list
 
     """
     
@@ -311,8 +331,66 @@ def average_signal(f, trigger, mode):
     
     """
     
+    trig_frames = trigger.nonzero()[0]
+    first_trg_indx = trig_frames[0]
+    repeats = len(trig_frames)/mode
     
-    return 
+    cropped_f, cropped_trig = data_crop(f, trigger, 0, 0)
+
+    def get_nth_loop(f, trigger, mode, repeats, interpolation_granularity):
+        trig_frames = trigger.nonzero()[0]
+
+        # nth_loop_len = trig_frames[mode-1] - trig_frames[0]
+        # loops_list = np.empty([repeats, f.shape[0], nth_loop_len])
+        loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
+        # trigger_segments = np.empty([repeats, 1, nth_loop_len])
+
+        for rep in range(repeats):
+            activity_segment = f[:, trig_frames[(
+                rep-1)*mode]:trig_frames[rep*mode-1]]
+            interpolated_activitiy_segment = utilities.interpolate(activity_segment, output_trace_resolution = interpolation_granularity)
+            
+            # Old algorithm for handling misaligned units:
+            # if activity_segment.shape[1] != nth_loop_len:
+            #     # If the segment is longer than expected, remove 1 frame
+            #     if activity_segment.shape[1] > nth_loop_len:
+            #         activity_segment = activity_segment[: activity_segment.shape[1]-1]
+            #     # If the segment is shorter than expected, duplicate last frame (note: get an OK on this...)
+            #     if activity_segment.shape[1] < nth_loop_len:
+            #         segment_overflow = np.atleast_2d(activity_segment[-1])
+            #         activity_segment = np.concatenate((activity_segment, segment_overflow))
+            # trigger_segment = trigger[trig_frames[(
+            #     rep-1)*mode]:trig_frames[rep*mode-1]]
+            
+            # Sometimes the triggers are misalinged by a single frame. The following algo handles this scenario
+
+            
+            loops_list[rep] = interpolated_activitiy_segment
+            
+
+            # loops_list[rep] = f[:, trig_frames[(rep-1)*mode]:trig_frames[rep*mode-1]]
+            # trigger_segments[rep] = trigger[trig_frames[(rep-1)*mode]:trig_frames[rep*mode-1]]
+            
+            
+            # if rep == 0:
+            #     loops_list[rep] = np.transpose(f[:, trig_frames[0]:trig_frames[mode-1]])
+            # else:
+            #     loops_list[rep] = np.transpose(f[:, trig_frames[rep*mode-1]:trig_frames[(mode-1)*rep]])
+        return loops_list
+        # return nth_f_loop, nth_trig_loop
+    slices  = get_nth_loop(f, trigger, 30, 3, interpolation_granularity = 10000)
+    
+    for rep in range(repeats):
+        average_traces = np.empty([repeats, 1, interpolation_granularity])
+        for i in slices[rep]:
+            a
+    
+    average_signal = 1
+    trial_signals_list = np.ones((2, 4))
+    
+    return average_signal, z
+
+test1, test2 = average_signal(fs, trig_trace, 30)
 
 """
 Resulting files
