@@ -125,6 +125,19 @@ def plot_traces(output_ops, f_cells, f_neuropils, spks):
         if i == 0:
             plt.legend(bbox_to_anchor=(0.93, 2))
 
+def plot_averages(f_avg, f_trial, roi, trigger): #, trigger, mode, ):
+    fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 250)
+    ax2 = ax1.twinx()
+    
+    # plt.figure()
+    ax2.plot(trigger[1])
+    for i in range(f_trial.ndim):
+        ax1.plot(f_trial[i][roi], color = 'lightgrey')
+    ax1.plot(f_avg[roi], color = 'r')
+    ax2.set_ylim(0, 1)
+    
+    plt.show()
+
 #Vizualisation
 # s2m.detection_viz(stats_file, iscell, stats, output_ops)
 # s2m.plot_traces(output_ops, f_cells, f_neuropils, spks)

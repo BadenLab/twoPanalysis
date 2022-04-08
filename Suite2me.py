@@ -304,27 +304,28 @@ def data_crop(f, trigger, start_buffer, end_buffer):
 
 fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um\suite2p\plane0\F.npy", r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um.npy")
 
-def temporal_alignment(resolution, line_scan_speed, etc...):
-    """
-    Because lines are scanned sequentially, ROI responses will be temporally
-    misaligned (especially for higher resolutions). To re-enable the ability 
-    to correlate the trigger channel with the imaging channel, signals from ROIs
-    will need to be temporally aligned. 
+# def temporal_alignment(resolution, line_scan_speed, etc...):
+#     """
+#     TODO
+#     Because lines are scanned sequentially, ROI responses will be temporally
+#     misaligned (especially for higher resolutions). To re-enable the ability 
+#     to correlate the trigger channel with the imaging channel, signals from ROIs
+#     will need to be temporally aligned. 
     
     
-    Parameters
-    ----------
+#     Parameters
+#     ----------
     
 
-    Returns
-    -------
-    int
-        DESCRIPTION.
+#     Returns
+#     -------
+#     int
+#         DESCRIPTION.
 
-    """
-    return 1
+#     """
+#     return 1
 
-def average_signal(f, trigger, mode):
+def average_signal(f, trigger, mode, **kwargs):
     """
     
 
@@ -336,6 +337,13 @@ def average_signal(f, trigger, mode):
         Trigger signal as a 1xn numpy array
     mode : TYPE
         The n-th trigger by which to average
+
+    **kwargs
+    --------
+    interpolation_granularity : int 
+        Default: 10000 The amount of points to generate after interpolation, independent of 
+        what the original input is. Can be specified to any value (but should
+        be used carefully...)
 
     Returns
     -------
@@ -350,67 +358,52 @@ def average_signal(f, trigger, mode):
     
     """
     
+    """
+    TODO
+    Kwarg this parameter:
+    """
+    if 'interpolation_coefficient' in kwargs:    
+        interpolation_coefficient = kwargs['interpolation_coefficient']
+    interpolation_coefficient = 10000
+    
     trig_frames = trigger.nonzero()[0]
     first_trg_indx = trig_frames[0]
     repeats = len(trig_frames)/mode
     
     cropped_f, cropped_trig = data_crop(f, trigger, 0, 0)
-
-    def get_nth_loop(f, trigger, mode, repeats, interpolation_granularity):
-        trig_frames = trigger.nonzero()[0]
-
-        # nth_loop_len = trig_frames[mode-1] - trig_frames[0]
-        # loops_list = np.empty([repeats, f.shape[0], nth_loop_len])
+    
+    # Sometimes the f arrays are misalinged by a single frame.
+    # The following algorithm handles this scenario by upsampling the data
+    # to a specific temporal resolution (e.g., all arrays are 1000 frames).
+    trig_frames = trigger.nonzero()[0]
+    def interpolate_each_trace(f, mode, repeats, interpolation_granularity):
         loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
-        # trigger_segments = np.empty([repeats, 1, nth_loop_len])
-
         for rep in range(repeats):
             activity_segment = f[:, trig_frames[(
                 rep-1)*mode]:trig_frames[rep*mode-1]]
             interpolated_activitiy_segment = utilities.interpolate(activity_segment, output_trace_resolution = interpolation_granularity)
-            
-            # Old algorithm for handling misaligned units:
-            # if activity_segment.shape[1] != nth_loop_len:
-            #     # If the segment is longer than expected, remove 1 frame
-            #     if activity_segment.shape[1] > nth_loop_len:
-            #         activity_segment = activity_segment[: activity_segment.shape[1]-1]
-            #     # If the segment is shorter than expected, duplicate last frame (note: get an OK on this...)
-            #     if activity_segment.shape[1] < nth_loop_len:
-            #         segment_overflow = np.atleast_2d(activity_segment[-1])
-            #         activity_segment = np.concatenate((activity_segment, segment_overflow))
-            # trigger_segment = trigger[trig_frames[(
-            #     rep-1)*mode]:trig_frames[rep*mode-1]]
-            
-            # Sometimes the triggers are misalinged by a single frame. The following algo handles this scenario
-
-            
             loops_list[rep] = interpolated_activitiy_segment
-            
-
-            # loops_list[rep] = f[:, trig_frames[(rep-1)*mode]:trig_frames[rep*mode-1]]
-            # trigger_segments[rep] = trigger[trig_frames[(rep-1)*mode]:trig_frames[rep*mode-1]]
-            
-            
-            # if rep == 0:
-            #     loops_list[rep] = np.transpose(f[:, trig_frames[0]:trig_frames[mode-1]])
-            # else:
-            #     loops_list[rep] = np.transpose(f[:, trig_frames[rep*mode-1]:trig_frames[(mode-1)*rep]])
         return loops_list
         # return nth_f_loop, nth_trig_loop
-    sliced_traces  = get_nth_loop(f, trigger, 30, 3, interpolation_granularity = 10000)
-
-    averaged_traces = np.average(sliced_traces, axis = 0)
-
+    def slice_triggers(trigger, interpolation_granularity):
+        trig_list = np.empty([round(repeats), interpolation_granularity])
+        for rep in range(round(repeats)):
+            trigger_segment = trigger[trig_frames[(
+                rep-1)*mode]:trig_frames[rep*mode-1]]
+            interpolated_trig_segment = utilities.interpolate(trigger_segment, output_trace_resolution = interpolation_granularity)
+            trig_list[rep] = interpolated_trig_segment
+        return trig_list
     
-    return averaged_traces, sliced_traces
+    sliced_traces  = interpolate_each_trace(f, 30, 3, interpolation_granularity = interpolation_coefficient)
+    sliced_triggers = slice_triggers(trigger, interpolation_granularity = interpolation_coefficient)
+    sliced_triggers = np.where(sliced_triggers>0, 1, 0)
+    averaged_traces = np.average(sliced_traces, axis = 0)
+    
+    return averaged_traces, sliced_traces, sliced_triggers
 
-test1, test2 = average_signal(fs, trig_trace, 30)
+test1, test2, test3 = average_signal(fs, trig_trace, 30)
 
-plt.plot(test1[0], color = 'r')
-plt.plot(test2[0][0], color = 'b')
-plt.plot(test2[0][1], color = 'b')
-plt.plot(test2[0][2], color = 'b')
-plt.show()
+
 """
 Resulting files
 ______________________________________________________________________________________________________________________________________________________________
