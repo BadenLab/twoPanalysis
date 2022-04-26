@@ -26,7 +26,7 @@ import utilities
 
 """Currently hard-coded..."""
 # import options
-import options_BC_testing
+# import options_BC_testing
 
 """
 Make plotting nice and consistent 
@@ -267,42 +267,12 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
     # return output_ops
 
 
-def data_crop(f, trigger, start_buffer, end_buffer):
-    """
-    Crop 
-
-    Parameters
-    ----------
-    f : TYPE
-        DESCRIPTION.
-    trigger : TYPE
-        DESCRIPTION.
-    start_buffer : TYPE
-        DESCRIPTION.
-    end_buffer : TYPE
-        DESCRIPTION.
-    tau : int
-        The time interval, aka frames per seconds.
-        
-    Returns
-    -------
-    cropped_f : 2d-array
-        Cropped flouresence traces
-    cropped_trigger : 1d-array
-        Cropped trigger signal
-
-    """
-    f_len               = f.shape[1]
-    # seconds_to_frames   = 1/tau
-    f_cropped           = f[:, start_buffer:f_len-end_buffer]
-    trigger_cropped     = trigger[start_buffer:f_len-end_buffer]
-    return f_cropped, trigger_cropped
 
 "Think a decorator is appropriate here, just need to work out how"
 # @data_crop(f, trigger, start_buffer, end_buffer)
 
 
-fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um\suite2p\plane0\F.npy", r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um.npy")
+# fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um\suite2p\plane0\F.npy", r"D:\data_output\test_tiffs_environment\mono_noUV_Rtect+20um.npy")
 
 # def temporal_alignment(resolution, line_scan_speed, etc...):
 #     """
@@ -325,83 +295,8 @@ fs, trig_trace = utilities.load_experiment(r"D:\data_output\test_tiffs_environme
 #     """
 #     return 1
 
-def average_signal(f, trigger, mode, **kwargs):
-    """
-    
 
-    Parameters
-    ----------
-    f : Numpy array
-        The extracted ROI traces represented as an nxm numpy array
-    trigger : Numpy array
-        Trigger signal as a 1xn numpy array
-    mode : TYPE
-        The n-th trigger by which to average
-
-    **kwargs
-    --------
-    interpolation_granularity : int 
-        Default: 10000 The amount of points to generate after interpolation, independent of 
-        what the original input is. Can be specified to any value (but should
-        be used carefully...)
-
-    Returns
-    -------
-    average_signal, trial_signals_list
-
-    """
-    
-    """
-    Take the f trace and from the first trigger, crop out the time interval
-    at every 'mode'-interval. Then do this n amount of times until the last 
-    trigger, and overlap/average.
-    
-    """
-    
-    """
-    TODO
-    Kwarg this parameter:
-    """
-    if 'interpolation_coefficient' in kwargs:    
-        interpolation_coefficient = kwargs['interpolation_coefficient']
-    interpolation_coefficient = 10000
-    
-    trig_frames = trigger.nonzero()[0]
-    first_trg_indx = trig_frames[0]
-    repeats = len(trig_frames)/mode
-    
-    cropped_f, cropped_trig = data_crop(f, trigger, 0, 0)
-    
-    # Sometimes the f arrays are misalinged by a single frame.
-    # The following algorithm handles this scenario by upsampling the data
-    # to a specific temporal resolution (e.g., all arrays are 1000 frames).
-    trig_frames = trigger.nonzero()[0]
-    def interpolate_each_trace(f, mode, repeats, interpolation_granularity):
-        loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
-        for rep in range(repeats):
-            activity_segment = f[:, trig_frames[(
-                rep-1)*mode]:trig_frames[rep*mode-1]]
-            interpolated_activitiy_segment = utilities.interpolate(activity_segment, output_trace_resolution = interpolation_granularity)
-            loops_list[rep] = interpolated_activitiy_segment
-        return loops_list
-        # return nth_f_loop, nth_trig_loop
-    def slice_triggers(trigger, interpolation_granularity):
-        trig_list = np.empty([round(repeats), interpolation_granularity])
-        for rep in range(round(repeats)):
-            trigger_segment = trigger[trig_frames[(
-                rep-1)*mode]:trig_frames[rep*mode-1]]
-            interpolated_trig_segment = utilities.interpolate(trigger_segment, output_trace_resolution = interpolation_granularity)
-            trig_list[rep] = interpolated_trig_segment
-        return trig_list
-    
-    sliced_traces  = interpolate_each_trace(f, 30, 3, interpolation_granularity = interpolation_coefficient)
-    sliced_triggers = slice_triggers(trigger, interpolation_granularity = interpolation_coefficient)
-    sliced_triggers = np.where(sliced_triggers>0, 1, 0)
-    averaged_traces = np.average(sliced_traces, axis = 0)
-    
-    return averaged_traces, sliced_traces, sliced_triggers
-
-test1, test2, test3 = average_signal(fs, trig_trace, 30)
+# test1, test2, test3 = average_signal(fs, trig_trace, 30)
 
 
 """

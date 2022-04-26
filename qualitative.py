@@ -125,12 +125,33 @@ def plot_traces(output_ops, f_cells, f_neuropils, spks):
         if i == 0:
             plt.legend(bbox_to_anchor=(0.93, 2))
 
+
+
 def plot_averages(f_avg, f_trial, roi, trigger): #, trigger, mode, ):
+    """
+    
+    """
+    """
+    TODO
+    Fix the plotting of trigger, as it now is interpolated and plots the entire
+    "series" (which is not real, because trigger should just last a single frame)
+    thereby making the plot confusing to read.
+    
+    Could average the onset of every trigger 
+    """
     fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 250)
     ax2 = ax1.twinx()
     
     # plt.figure()
+    """
+    NB
+    The below line currently only plots the average of all triggers per trial, 
+    binarised such that n<1 = 0
+    """
+    trig_avg = np.average(trigger, axis = 0)
+    trig_binary = np.where(trig_avg<1, 0, 1)
     ax2.plot(trigger[1])
+    ax2.plot(trig_binary)
     for i in range(f_trial.ndim):
         ax1.plot(f_trial[i][roi], color = 'lightgrey')
     ax1.plot(f_avg[roi], color = 'r')

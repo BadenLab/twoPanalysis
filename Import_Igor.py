@@ -50,6 +50,8 @@ import os
 import numpy as np 
 
 class get_stack:
+    # This class is used in the .smh+.smp to .tiff conversion process, 
+    # as well as for constructing the trigger signal. 
     def __init__(self, file_path):
         print("Getting stack...")
         self.file_path = pathlib.Path(file_path)
@@ -109,7 +111,7 @@ def get_header_dict(stack_obj):
         }
     return header_dict
     
-# Make trigger_trace
+# Make trigger_trace --> This should be addedd to the get_stack class? 
 def trigger_trace(trigger_arr):
     trigger_trace_arr = np.zeros((1, trigger_arr.shape[0]))[0]
     for frame in range(trigger_arr.shape[0]):
