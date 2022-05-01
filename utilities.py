@@ -11,6 +11,15 @@ import numpy as np
 
 class file_handling:
     def load_experiment(f_path, trigger_path):
+        """Loads up the files for F trace and trigger trace, taking the path for each respectively as input"    
+
+        Args:
+            f_path (str): Path in str of F trace numpy file 
+            trigger_path (str): Path in str of trigger trace numpy file 
+
+        Returns:
+            f, trigger: The F and trigger as numpy arrays
+        """        
         f = np.load(f_path, allow_pickle = True)
         trigger = np.load(trigger_path, allow_pickle = True)
         return f, trigger
@@ -22,7 +31,7 @@ class file_handling:
     
     def get_content(folder_path):
         """
-        
+        Takes a folder path (in str or path-like) and returns the 
     
         Parameters
         ----------

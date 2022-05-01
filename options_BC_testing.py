@@ -31,7 +31,7 @@ ops['fs'] = 1 # sampling rate of recording, determines binning for cell detectio
 ops['tau'] = 0.1 #was 1.25 # timescale of gcamp to use for deconvolution
 # ops["frames_include"] = 128 #NOTE THIS NEEDS TO BE REMOVED LATER, TESTING ONLY
 # ops["classifier_path"] = r"C:\Users\SimenLab\OneDrive\Universitet\PhD\Python files\Git repos\2Panalysis\Classifiers\256x256 GCaMP6s single tectum.npy" # default: 0, otherwise pass path to classifier file
-ops["classifier_path"] = r"C:\Users\Simen\Desktop\BC testing.npy"
+# ops["classifier_path"] = r"C:\Users\Simen\Desktop\BC testing.npy"
 
 """_________________________________OUTPUT SETTINGS_________________________"""
 # if ops["nplanes"] > 1:

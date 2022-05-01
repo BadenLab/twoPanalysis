@@ -2,7 +2,7 @@
 """
 Created on Fri Feb  4 14:34:52 2022
 
-Credits to: https://www.github.com/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb 
+Credits to: https://www.github.com/MouseLand/suite2p/blob/main/jupyter/run_suite2p_colab_2021.ipynb
 
 @author: SimenLab
 """
@@ -29,7 +29,7 @@ import utilities
 # import options_BC_testing
 
 """
-Make plotting nice and consistent 
+Make plotting nice and consistent
 """
 # mpl.rcParams.update({
 #     'axes.spines.left': True,
@@ -47,8 +47,8 @@ Make plotting nice and consistent
 # cmap.set_bad(color='k')
 
 """
-TODO Need to crop the imaging file to the trigger channel already during the 
-Import_Igor phase... Maybe the class I wrote earler would be useful for this. 
+TODO Need to crop the imaging file to the trigger channel already during the
+Import_Igor phase... Maybe the class I wrote earler would be useful for this.
 """
 
 """
@@ -57,7 +57,7 @@ ________________________________________________________________________________
 TIP: Since it's common to change datasets and keep the same parameters for each
  dataset, some might find it useful to specify data-related arguments in db and
  pipeline parameters in op.
- 
+
  See 'options.py'
 """
 # ## Call default ops file
@@ -116,18 +116,18 @@ def gen_ops(ops, db):
 def extract_singleplane(input_folder, save_dir, output_folder, crop):
     """
     Script for running Suite2p analysis on .tiffs with a single plane.
-    E.g., every frame is from the same plane. The .tiffs are processed in 
-    sequence. 
-    
+    E.g., every frame is from the same plane. The .tiffs are processed in
+    sequence.
+
     Parameters
     ----------
-    input_folder: Str or pathlib.Path object 
+    input_folder: Str or pathlib.Path object
         Folder from which Igor .smh's/.smp's are taken.
-    save_dir: Str or pathlib.Path object 
+    save_dir: Str or pathlib.Path object
         Directory where outputs from Suite2p are stored.
     output_folder:
-        Name of folder in save_dir algorithm should output to. 
-    crop: Int 
+        Name of folder in save_dir algorithm should output to.
+    crop: Int
         Takes a single intiger and assumes it as squared (i.e. 256 (x 256), 512 (x 512), etc.)
     ops_path: Path-like
         Path of options file to use.
@@ -159,19 +159,13 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
             if child == str(output_folder.joinpath("suite2p")):
                 print("Here be pirates")
                 sys.exit()
-            # elif: #Seems buggy/not fit for use
-            #     warnings.warn(
-            #         "Other content exists in {}. Consider deleting content.".format(
-            #             pathlib.Path(save_dir).joinpath(output_folder)
-            #         )
-            #     )
                 other_stuff = True
                 time.sleep(.1)
                 # sys.exit()
                 # break
     # Step 2: Get file, convert to TIF, place in folder
     ## Check if .tiff files have already been made
-    if other_stuff == True:
+    if other_stuff is True:
         # Get names (stems, w/o suffix) of files in input folder
         check_list_input = []
         for file_in in input_folder.iterdir():
@@ -182,42 +176,49 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
             check_list_output.append(pathlib.Path(file_out).stem)
             "^ This returns everything in folder, so could just use this"
             "method to check if Suite2p already exists there... Saves time?"
-        if any(file_stems in check_list_output for file_stems in check_list_input) == True:
+        if any(file_stems in check_list_output for file_stems in check_list_input) is True:
             warnings.warn(
                 "Input Igor binaries have same filenames as existing .tiffs in target output folder")
             time.sleep(1)
             tiff_count = len(sorted(final_destination.glob("*.tiff")))
             print(
-                "Found {} pre-existing .tiffs. Running Suite2p on pre-existing .tiffs".format(tiff_count))
-    elif other_stuff == False:
-       _check_file_types = []
-       tiff_count = 0
-       for file in input_folder.iterdir():
-           # print(file)
-           _check_file_types.append(pathlib.Path(file).suffix)
-    #     "Here need a check if .tiff files already exist to "
-           if ".tiff" in _check_file_types:
-               warnings.warn(
-                   ".tiff file(s) already exist here. Skipping .tiff conversion")
-           if ".tif" in _check_file_types:
-               warnings.warn(
-                   ".tif file(s) already exist here. Skipping .tiff conversion")
-           else:
-               if file.suffix == ".smp":
-                   tiff_count += 1
-                   file = pathlib.Path(file).resolve()
-                   img = Import_Igor.get_stack(file)
-                   img_name = file.stem
-                   img_arr, trigger_arr = Import_Igor.get_ch_arrays(img, crop)
-                   # save_folder = pathlib.Path(r".\Data\data_output\{}".format(img_name)) # Bit more elegant than above
-                   tifffile.imsave(final_destination.joinpath(
-                       img_name).with_suffix(".tiff"), img_arr)
-                   # Algorithmically get the trigger trace out of trigger channel
-                   trigger_trace = Import_Igor.trigger_trace(trigger_arr)
-                   np.save(final_destination.joinpath(
-                       img_name).with_suffix(".npy"), trigger_trace)
-                   del img, img_name, img_arr, trigger_arr, file
-
+                f"Found {tiff_count} pre-existing .tiffs. Running Suite2p on pre-existing .tiffs")
+    elif other_stuff is False:
+        _check_file_types = []
+        tiff_count = 0
+        for file in input_folder.iterdir():
+            # print(file)
+            _check_file_types.append(pathlib.Path(file).suffix)
+            if ".tiff" in _check_file_types:
+                warnings.warn(
+                    ".tiff file(s) already exist here. Skipping .tiff conversion")
+            if ".tif" in _check_file_types:
+                warnings.warn(
+                    ".tif file(s) already exist here. Skipping .tiff conversion")
+            else:
+                if file.suffix == ".smp":
+                    tiff_count += 1
+                    file = pathlib.Path(file).resolve()
+                    img = Import_Igor.get_stack(file)
+                    img_name = file.stem
+                    img_arr, trigger_arr = Import_Igor.get_ch_arrays(img, crop)
+                    trigger_trace = Import_Igor.trigger_trace(trigger_arr) # Algorithmically get the trigger trace out of trigger channel
+                    # save_folder = pathlib.Path(r".\Data\data_output\{}".format(img_name)) # Bit more elegant than above
+                    tiff_path = final_destination.joinpath(
+                        img_name).with_suffix(".tiff")
+                    trig_path = final_destination.joinpath(
+                        img_name).with_suffix(".npy")
+                    tifffile.imsave(tiff_path, img_arr)
+                    np.save(trig_path, trigger_trace)
+                    del img, img_name, img_arr, trigger_arr, file
+                    """
+                    TODO
+                    Make shutil.move to a folder with the same file name (bascially what 
+                    what happens in the function below) but do it earlier. This is so that
+                    the tiff and the trig trace can be stored in the same folder as'suite2p'
+                    
+                    --> Currently doing this in tiff_f_extract... Move it here?
+                    """
     # Step 3: For every .tiff in directory, run Suite2p on that file individually
     ## Get list of subdirs in dir
     subdir_paths = [f.path for f in os.scandir(
@@ -236,26 +237,36 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
             if new_single_tiff_folder.exists() == False:
                 new_single_tiff_folder.mkdir()
             ### Step 3.2: Move tiff file into folder
-            tiff_new_location = shutil.move(
-                path_to_be_analysed, new_single_tiff_folder)
+            tiff_new_location = pathlib.Path(shutil.move(
+                path_to_be_analysed, new_single_tiff_folder))
             ### Step 3.3: Point Suite2p to the right folder for analysis
             # needs to be a dictionary with a list of path(s)
             db = {'data_path': [str(new_single_tiff_folder)], }
-            
+
             """Select ops file (this should not be hard-coded)..."""
             # ops = options.ops
             ops = options_BC_testing.ops
             # ops = np.load(ops_path, allow_pickle=True)
-            # if tiff_count > 1:
-            #     ops["nplanes"] = tiff_count
-            # ops["nplanes"] = 1
-            # ops["classifier_path"] = 0
             # Step 4: Run Suite2p on this newly created folder with corresponding tiff file
             output_ops = gen_ops(ops, db)
             ops = suite2p.registration.metrics.get_pc_metrics(output_ops)
             output_ops = gen_ops(ops, db)
-            # Step 5: Clean up files by moving tiffs back to original position
-            shutil.move(tiff_new_location, final_destination)
+            # Alt step 5: Clean up files by moving them into the new folder position
+            # then renaming them to their appropriate descriptions
+            """This is a bit messy and could use a cleanup:"""
+            current_tiff_name = tiff_new_location.stem
+            current_tiff_final_location =  tiff_new_location.rename(
+                tiff_new_location.with_stem(
+                f"{current_tiff_name}_ch1").with_suffix(".tiff"))
+            corresponding_trig_npy = path_to_be_analysed.with_suffix(".npy")
+            trig_ch_name = path_to_be_analysed.stem
+            # new_trig_path = corresponding_trig_npy.parent.joinpath(
+            #     f"{trig_ch_name}_ch2")
+            new_trig_path = corresponding_trig_npy.parent.joinpath(
+                corresponding_trig_npy.stem, current_tiff_name
+                ).with_stem(f"{trig_ch_name}_ch2").with_suffix(".npy")
+            print(new_trig_path)
+            shutil.move(corresponding_trig_npy, new_trig_path)
             # ops = suite2p.get_pc_metrics(ops)
     tiff_f_extract(tiff_paths)
 # del output_ops, ops
@@ -278,14 +289,14 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
 #     """
 #     TODO
 #     Because lines are scanned sequentially, ROI responses will be temporally
-#     misaligned (especially for higher resolutions). To re-enable the ability 
+#     misaligned (especially for higher resolutions). To re-enable the ability
 #     to correlate the trigger channel with the imaging channel, signals from ROIs
-#     will need to be temporally aligned. 
-    
-    
+#     will need to be temporally aligned.
+
+
 #     Parameters
 #     ----------
-    
+
 
 #     Returns
 #     -------
@@ -302,9 +313,9 @@ def extract_singleplane(input_folder, save_dir, output_folder, crop):
 """
 Resulting files
 ______________________________________________________________________________________________________________________________________________________________
-The output parameters can also be found in the "ops.npy" file. This is 
-especially useful when running the pipeline from the terminal or the graphical 
-interface. It contains the same data that is output from the python run_s2p() 
+The output parameters can also be found in the "ops.npy" file. This is
+especially useful when running the pipeline from the terminal or the graphical
+interface. It contains the same data that is output from the python run_s2p()
 function.
 """
 # print(list(Path(output_op['save_path']).iterdir()))
