@@ -87,7 +87,7 @@ ops["win_baseline"] = 60 # (float, default: 60.0) window for maximin filter in s
 ops["sig_baseline"] = 15 #(float, default: 10.0) Gaussian filter width in seconds, used before maximin filtering or taking the minimum value of the trace, ops[‘baseline’] = ‘maximin’ or ‘constant’.
 ops["prctile_baseline"] = 8 # (float, optional, default: 8) percentile of trace to use as baseline if ops[‘baseline’] = ‘constant_percentile’.
 
-np.save(r"C:\Users\SimenLab\OneDrive\Universitet\PhD\Python files\Git repos\2Panalysis\Ops configurations\{}".format(ops_name), ops)
+# np.save(r"C:\Users\SimenLab\OneDrive\Universitet\PhD\Python files\Git repos\2Panalysis\Ops configurations\{}".format(ops_name), ops)
 # np.save(r"C:\Users\Simen\Desktop\{}".format(ops_name), ops)
 
 # ops["neuropil_extract"] = False #, BROKEN

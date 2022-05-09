@@ -127,7 +127,7 @@ def plot_traces(output_ops, f_cells, f_neuropils, spks):
 
 
 
-def plot_averages(f_avg, f_trial, roi, trigger): #, trigger, mode, ):
+def plot_averages(f_avg, f_trial, trigs_for_trial, roi): #, trigger, mode, ):
     """
     
     """
@@ -148,9 +148,9 @@ def plot_averages(f_avg, f_trial, roi, trigger): #, trigger, mode, ):
     The below line currently only plots the average of all triggers per trial, 
     binarised such that n<1 = 0
     """
-    trig_avg = np.average(trigger, axis = 0)
+    trig_avg = np.average(trigs_for_trial, axis = 0)
     trig_binary = np.where(trig_avg<1, 0, 1)
-    ax2.plot(trigger[1])
+    # ax2.plot(trigs_for_trial[1])
     ax2.plot(trig_binary)
     for i in range(f_trial.ndim):
         ax1.plot(f_trial[i][roi], color = 'lightgrey')

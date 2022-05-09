@@ -56,9 +56,10 @@ class file_handling:
         ops =  np.load(path, allow_pickle=True)
         ops = ops.item()
         
-    def read_ops(file_path):
+    def read_item(file_path):
         """
-        
+        Utility function for quickly and correctly importing complexnumpy items
+        from Suite2p folders (iscell, stats, etc.).
     
         Parameters
         ----------
@@ -101,9 +102,9 @@ class data:
             Cropped trigger signal
     
         """
-        f_len               = f.shape[1]
+        f_len               = f.shape[0]
         # seconds_to_frames   = 1/tau
-        f_cropped           = f[:, start_buffer:f_len-end_buffer]
+        f_cropped           = f[start_buffer:f_len-end_buffer]
         trigger_cropped     = trigger[start_buffer:f_len-end_buffer]
         return f_cropped, trigger_cropped
     
@@ -130,7 +131,6 @@ class data:
                 for n, trace in enumerate(input_array):
                     x = np.arange(0, len(trace))
                     y = trace
-                    
                     x_new = np.linspace(0, len(trace), output_trace_resolution)
                     interpolated_trace = np.interp(x_new, x, y)
                     
