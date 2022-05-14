@@ -22,7 +22,7 @@ def load_data(path):
 
 
 
-"@Utility"
+
 def display(im3d, cmap="gray", step=1):  # Not written by me:) --> https://scikit-image.org/docs/dev/auto_examples/applications/plot_3d_image_processing.html#sphx-glr-auto-examples-applications-plot-3d-image-processing-py
     _, axes = plt.subplots(nrows=22, ncols=21, figsize=(16, 14))
 
@@ -34,24 +34,7 @@ def display(im3d, cmap="gray", step=1):  # Not written by me:) --> https://sciki
         ax.set_xticks([])
         ax.set_yticks([])
     
-"@Visualisation"
 
-
-"@Getting data:"
-# Make trigger_trace
-def trigger_trace(trigger_arr):
-    trigger_trace_arr = np.zeros((1, trigger_arr.shape[0]))[0]
-    for frame in range(trigger_arr.shape[0]):
-        if np.any(trigger_arr[frame] > 1):
-            trigger_trace_arr[frame] = 1
-        #If trigger is in two consecutive frames, just use the first one so counting is correct
-        if trigger_trace_arr[frame] == 1 and trigger_trace_arr[frame-1] == 1: 
-            trigger_trace_arr[frame] = 0
-        # else:
-            # trigger_trace_arr[frame] = 0
-    return trigger_trace_arr
-
-"@Plotting:"
 def plot_heatmap(f, trigger, normalize = 1, **kwargs):
     plt.figure(figsize=(20, 10), dpi = 200)
     
@@ -127,7 +110,7 @@ def plot_traces(output_ops, f_cells, f_neuropils, spks):
 
 
 
-def plot_averages(f_avg, f_trial, trigs_for_trial, roi): #, trigger, mode, ):
+def plot_averages(f_avg, f_trial, trig_trial, trig_avg, roi): #, trigger, mode, ):
     """
     
     """
@@ -139,7 +122,7 @@ def plot_averages(f_avg, f_trial, trigs_for_trial, roi): #, trigger, mode, ):
     
     Could average the onset of every trigger 
     """
-    fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 250)
+    fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 100)
     ax2 = ax1.twinx()
     
     # plt.figure()
@@ -148,16 +131,38 @@ def plot_averages(f_avg, f_trial, trigs_for_trial, roi): #, trigger, mode, ):
     The below line currently only plots the average of all triggers per trial, 
     binarised such that n<1 = 0
     """
-    trig_avg = np.average(trigs_for_trial, axis = 0)
-    trig_binary = np.where(trig_avg<1, 0, 1)
-    # ax2.plot(trigs_for_trial[1])
-    ax2.plot(trig_binary)
-    for i in range(f_trial.ndim):
+    # trig_avg = np.average(trigs_for_trial, axis = 0)
+    # trig_binary = np.where(trig_avg<1, 0, 1)
+    beauty_trig = np.zeros((len(trig_avg)))
+    for n, i in enumerate(trig_avg):
+        if trig_avg[n-1] == 0 and trig_avg[n] == 1:
+            beauty_trig[n] = 1
+        if trig_avg[n-2] == 1 and trig_avg[n-1] == 1 and trig_avg[n] == 0:
+            trig_avg[n] = 0
+        ## Old
+        # if trig_avg[n] == 1:
+        #     beauty_trig[n] = 1
+        # if trig_avg[n] == 1 and trig_avg[n-1] == 1: 
+        #     trig_avg[n] = 0
+        # else:
+        #     trig_avg[n] = 0
+    # ax2.plot(trig_avg)
+    ## Find, on average, when the trigger occurs and plot at its onset
+    # avg_trig_distance = round(np.average(np.gradient(trig_frames)))
+    
+    ax2.plot(beauty_trig)
+    # ax2.plot(trig_binary)
+    for i in range(f_trial.shape[0]):
         ax1.plot(f_trial[i][roi], color = 'lightgrey')
     ax1.plot(f_avg[roi], color = 'r')
     ax2.set_ylim(0, 1)
     
     plt.show()
+     
+    
+def plot_trigger(trigger):
+    fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 1000)
+    plt.plot(trigger)
 
 #Vizualisation
 # s2m.detection_viz(stats_file, iscell, stats, output_ops)

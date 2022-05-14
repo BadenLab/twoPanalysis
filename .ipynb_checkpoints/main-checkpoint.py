@@ -1,11 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon May  9 13:40:33 2022
+Created on Thu Jan 20 13:13:31 2022
 
 @author: SimenLab
 """
+# Environment imports:
+import pathlib
+import numpy as np 
+import pandas as pd
+import pathlib
+# import sys
+
+#Local imports:
+# import Suite2me as s2m
 import utilities
-import numpy as np
+import quantitative
+import qualitative
 
 class Experiment:
     def __init__(self, directory,**kwargs):
@@ -159,6 +169,7 @@ class Experiment:
             print(f"List of dictionaries with information from {self.directory} "
                   "created and placed in DataFrame under self.panda.")
             # Make a DataFrame from the list of dictionaries (each row is one experiment)
+            # self.panda = pd.DataFrame.from_dict(data=list_of_dicts).transpose()
             self.panda = pd.DataFrame.from_dict(data=list_of_dicts).transpose()
             # Make each row accessible via object
             self.names = self.panda.loc["folder_name"]
@@ -199,9 +210,12 @@ class Experiment:
                 raise ValueError("Missing **kwargs value 'mode', which determines"
                                   "averaging of f-traces.")
             else:
-                self.panda.loc["f_avgs"] = None
-                self.panda.loc["f_trials"] = None
-                self.panda.loc["trig_trials"] = None
+                # self.panda.loc["f_avgs"] = None.astype('O')
+                # self.panda.loc["f_trials"] = None.astype('O')
+                # self.panda.loc["trig_trials"] = None.astype('O')
+                self.panda.loc["f_avgs"] = 0
+                self.panda.loc["f_trials"] = 0
+                self.panda.loc["trig_trials"] = 0
                 # f_avg_list = []
                 # f_trial_list = []
                 # trig_trial_list = []
@@ -214,10 +228,7 @@ class Experiment:
                     # f_avg_list.append(f_avg)
                     # f_trial_list.append(f_trial)
                     # trig_trial_list.append(trig_trial)
-                    
-                    print((f_avg.shape))
-                    print((f_trial.shape))
-                    print((trig_trial.shape))
+
                     self.panda.loc["f_avgs"][i] = f_avg
                     self.panda.loc["f_trials"][i] = f_trial
                     self.panda.loc["trig_trials"][i] = trig_trial
@@ -288,3 +299,4 @@ class Experiment:
         # # Index and get ops
         # self.ops_index = find_files(self.directory, "ops", ".npy")
         # self.ops = build_from_index((self.ops_index))
+

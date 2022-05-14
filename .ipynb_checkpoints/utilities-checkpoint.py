@@ -11,7 +11,6 @@ import tifffile
 import warnings
 import shutil
 import Import_Igor
-import os
 
 class file_handling:
     def load_experiment(f_path, trigger_path):
@@ -160,10 +159,7 @@ class data:
                     img_name).with_suffix(".tiff")
                 trig_path = output_folder.joinpath(
                     img_name).with_suffix(".npy")
-                try:
-                    tifffile.imwrite(tiff_path, img_arr)
-                except FileNotFoundError:
-                    os.mkdir(tiff_path.parent)
+                tifffile.imsave(tiff_path, img_arr)
                 np.save(trig_path, trigger_trace)
                 del img, img_name, img_arr, trigger_arr, file
             if img_count == 0:
@@ -226,31 +222,18 @@ class data:
                     interpolated_trace = np.interp(x_new, x, y)
                     
                     interp_list[n] = interpolated_trace
-            if input_array.ndim == 3:
-                interp_list = np.empty((input_array.shape[0], input_array.shape[1], output_trace_resolution))
+            else:
+                interp_list = np.empty((input_array.ndim, input_array.shape[1], output_trace_resolution))
                 for n, array in enumerate(input_array):
                     for m, trace in enumerate(array):
                         x = np.arange(0, len(trace))
                         y = trace
+                        
                         x_new = np.linspace(0, len(trace), output_trace_resolution)
                         interpolated_trace = np.interp(x_new, x, y)
-                        interp_list[n][m] = interpolated_trace
-        
-            # else:
-            #     interp_list = np.empty((input_array.ndim, input_array.shape[1], output_trace_resolution))
-            #     # print(input_array.shape)
-            #     for n, array in enumerate(input_array):
-            #         for m, trace in enumerate(array):
-            #             x = np.arange(0, len(trace))
-            #             y = trace
                         
-            #             x_new = np.linspace(0, len(trace), output_trace_resolution)
-            #             interpolated_trace = np.interp(x_new, x, y)
-            #             # print(n, m)
-            #             interp_list[n][m] = interpolated_trace
-            #         # np.append(interpolated_trace, interp_list)
-            
-            
+                        interp_list[n][m] = interpolated_trace
+                    # np.append(interpolated_trace, interp_list)
             return interp_list
         else:
             x = np.arange(0, len(input_array))
@@ -260,19 +243,5 @@ class data:
             interpolated_trace = np.interp(x_new, x, y)
         
             return interpolated_trace
-    # Make trigger_trace
-    def trigger_trace(trigger_arr):
-        trigger_trace_arr = np.zeros((1, trigger_arr.shape[0]))[0]
-        for frame in range(trigger_arr.shape[0]):
-            if np.any(trigger_arr[frame] > 1):
-                trigger_trace_arr[frame] = 1
-            #If trigger is in two consecutive frames, just use the first one so counting is correct
-            if trigger_trace_arr[frame] == 1 and trigger_trace_arr[frame-1] == 1: 
-                trigger_trace_arr[frame] = 0
-            # else:
-                # trigger_trace_arr[frame] = 0
-        return trigger_trace_arr
-
-    
 # test2 = np.load(r"C:\Users\SimenLab\OneDrive - University of Sussex\Desktop\test.npy")
 # v = interpolate(test2, 300)
