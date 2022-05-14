@@ -55,19 +55,24 @@ def average_signal(f, trigger, mode, **kwargs):
     trigger, and overlap/average.
     
     """
-    
     if trigger.ndim == 2:
         trigger = trigger[0]
     if f.dtype != 'float64':
         f = f.astype(float)
     if trigger.dtype != 'float64':
         trigger = trigger.astype(float)
-    
     trig_frames = trigger.nonzero()[0]
     # first_trg_indx = trig_frames[0]
     num_of_trigs = len(np.where(trigger == 1)[0])
     repeats = int(num_of_trigs/mode)
     num_of_frames = f.shape[1]
+    
+    ## Compute average distance between triggers
+    avg_trig_distance = round(np.average(np.gradient(trig_frames)))
+    ## Add an "estimated" trigger to the end of trig_frames (such that we also get the last response)
+    value_to_add = trig_frames[-1] + avg_trig_distance
+    trig_frames = np.append(trig_frames, value_to_add)
+    
     print(f"{num_of_trigs} triggers and {repeats} repeats. F-array is {num_of_frames} long")
     
     if 'interpolation_coefficient' in kwargs:    
@@ -86,87 +91,47 @@ def average_signal(f, trigger, mode, **kwargs):
         # Create empty array with the correct shape
         loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
         for rep in range(repeats):
-            activity_segment = f[:, trig_frames[(
-                rep-1)*mode]:trig_frames[rep*mode-1]]
+            
+            from_index = trig_frames[(rep)*mode]
+            to_index = trig_frames[(rep+1)*mode]
+            print("From:", from_index, "to:", to_index, "for rep", rep)
+            activity_segment = f[:, from_index:to_index]
+            
+            # activity_segment = f[:, trig_frames[(
+            #     rep-1)*mode]:trig_frames[rep*mode-1]]
+            
             interpolated_activitiy_segment = utilities.data.interpolate(activity_segment, output_trace_resolution = interpolation_granularity)
             loops_list[rep] = interpolated_activitiy_segment
         return loops_list
         # return nth_f_loop, nth_trig_loop
-    def slice_triggers(trigger, interpolation_granularity):
+    def slice_triggers(c, mode, repeats, interpolation_granularity):
         trig_list = np.empty([round(repeats), interpolation_granularity])
-        for rep in range(round(repeats)):
-            trigger_segment = trigger[trig_frames[(
-                rep-1)*mode]:trig_frames[rep*mode-1]]
+        for rep in range((repeats)):
+            # trigger_segment = trigger[trig_frames[(
+                # rep-1)*mode]:trig_frames[rep*mode-1]]
+            
+            from_index = trig_frames[(rep)*mode]
+            to_index = trig_frames[(rep+1)*mode]
+            trigger_segment = trigger[from_index:to_index]
+            # print(trigger_segment)
+            # print("Trig segment shape is", trigger_segment.shape)
             interpolated_trig_segment = utilities.data.interpolate(trigger_segment, output_trace_resolution = interpolation_granularity)
+            
             trig_list[rep] = interpolated_trig_segment
         return trig_list
     
     # Interpolate and slice as needed 
     trial_traces  = interpolate_each_trace(f, mode, repeats, interpolation_granularity = interpolation_coefficient)
-    trial_triggers = slice_triggers(trigger, interpolation_granularity = interpolation_coefficient)
     averaged_traces = np.average(trial_traces, axis = 0)
+    trial_triggers = slice_triggers(trigger, mode, repeats, interpolation_granularity = interpolation_coefficient)
+    averaged_triggers = np.average(trial_triggers, axis = 0)
     # Interpolate back to oringinal temporal resolution 
-    trial_triggers = utilities.data.interpolate(trial_triggers, int(num_of_frames/repeats))
-    # print(trial_traces.shape)
     trial_traces = utilities.data.interpolate(trial_traces, int(num_of_frames/repeats)) 
     averaged_traces = utilities.data.interpolate(averaged_traces, int(num_of_frames/repeats)) 
+    trial_triggers = utilities.data.interpolate(trial_triggers, int(num_of_frames/repeats))
+    averaged_triggers = utilities.data.interpolate(averaged_triggers, int(num_of_frames/repeats)) 
     # Binarise trigger
     trial_triggers = np.where(trial_triggers>0, 1, 0) # Binarise 
-    return averaged_traces, trial_traces, trial_triggers
+    averaged_triggers = np.where(averaged_triggers>0, 1, 0) # Binarise 
+    return averaged_traces, trial_traces, trial_triggers, averaged_triggers
 
-
-#Load data
-# def load_datav1(path):
-#     load_path = pathlib.Path(path)    
-#     with np.load(load_path.with_suffix('.npz'), allow_pickle = True) as data:
-#         f_cells     = data["f_cells"]
-#         f_neuropils = data["f_neuropils"] 
-#         spks        = data["spks"]
-#         stats_file  = data["stats_file"] 
-#         iscell      = data["iscell"]
-#         stats       = data["stats"] 
-#         ops         = data["ops"]
-#         db          = data["db"] 
-#         output_ops  = data["output_ops"] 
-#         trigger_arr = data["trigger_arr"]
-#         header_info = data["header_info"]
-        
-#         return f_cells
-    
-#         "This works kinda, but dicts like ops are just empty..."
-        
-# def load_datav2(path):
-#     load_path = pathlib.Path(path)    
-#     with np.load(load_path.with_suffix('.npz'), allow_pickle = True) as data:
-#         return data
-#         # f_cells     = data["f_cells"]
-#         # f_neuropils = data["f_neuropils"] 
-#         # spks        = data["spks"]
-#         # stats_file  = data["stats_file"] 
-#         # iscell      = data["iscell"]
-#         # stats       = data["stats"] 
-#         # ops         = data["ops"]
-#         # db          = data["db"] 
-#         # output_ops  = data["output_ops"] 
-#         # trigger_arr = data["trigger_arr"]
-#         # header_info = data["header_info"]
-        
-
-#         # data_dict = {
-#         #     "f_cells"     : f_cells,
-#         #     "f_neuropils" : f_neuropils, 
-#         #     "spks"        : spks, 
-#         #     "stats_file"  : stats_file, 
-#         #     "iscell"      : iscell, 
-#         #     "stats"       : stats, 
-#         #     "ops"         : ops, 
-#         #     "db"          : db, 
-#         #     "output_ops"  : output_ops, 
-#         #     "trigger_arr" : trigger_arr,
-#         #     "header_info" : header_info
-#         #     }
-#             # df = pd.DataFrame(data = data_dict)
-#             # load_path.stem = data
-#             # data_dump = data
-#             # return load_path.stem, data
-#             # print(data['f_cells'])
