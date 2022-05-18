@@ -31,3 +31,4 @@ itables
 ipyplot
 ipywidgets
 ipyfilechooser
+nodejs
