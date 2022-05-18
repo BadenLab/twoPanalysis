@@ -15,6 +15,7 @@ import suite2p
 import shutil
 import warnings
 import time
+import suite2p
 
 import Import_Igor
 import utilities
@@ -35,7 +36,7 @@ TODO Need to crop the imaging file to the trigger channel already during the
 Import_Igor phase... Maybe the class I wrote earler would be useful for this.
 """
 
-def gen_ops(ops, db):
+def run_suite2p(ops, db):
     output_ops = suite2p.run_s2p(ops=ops, db=db)  # Run the actual algo...
     print("Initiating suite2p.run_s2p")
     # print(len(output_ops))
@@ -45,7 +46,6 @@ def gen_ops(ops, db):
         raise ValueError(
             "Keys in output_ops_file is different from keys in output_ops")
     return output_ops  # , output_ops_file
-
 
 def extract_singleplane(input_folder, output_folder, crop, **kwargs):
     """
@@ -63,8 +63,10 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         Path where algorithm should output to.
     crop: Int
         Takes a single intiger and assumes it as squared (i.e. 256 (x 256), 512 (x 512), etc.)
-    ops_path: Path-like
-        Path of options file to use.
+    **path_of_ops: Path-like
+        Path of options file to use. If not specified, uses inbuilt default.
+    **path_of_classifier: Path-like
+        Path of classifier file to use. If not specified, uses inbuilt default.
     Returns
     -------
     None.
@@ -94,9 +96,9 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         for input_file in trig_paths:    
             shutil.copy2(input_file, output_folder.joinpath(input_file.name))
     ## Run through target folder and clean it up (establishing a file hierarchy)
-
+        # - This is now conducted by the function utilities.file_handling.prep_file_hierarchy!
     ## Run Suite2p on each .tiff file in the file hieararchy 
-    def tiff_f_extract(path_of_tiffs):
+    def tiff_f_extract(path_of_tiffs, **kwrags):
         tiff_num = len(path_of_tiffs)
         if tiff_num == 0:
             raise Warning("No .tiff files detected by tiff_f_extract().")
@@ -107,18 +109,21 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
             # needs to be a dictionary with a list of path(s)
             tiff_loc = pathlib.Path(tiff).parent
             db = {'data_path': [str(tiff_loc)], }
-    
-            """Select ops file (this should not be hard-coded)..."""
-            if ops = None:
-                
-            ops = options.ops
-            # ops = options_BC_testing.ops
-            # ops = np.load(ops_path, allow_pickle=True)
-            
-            # Step 4: Run Suite2p on this newly created folder with corresponding tiff file
-            output_ops = gen_ops(ops, db)
+             # Select ops file
+            if kwargs["path_of_ops"] is None or "path_of_ops" not in kwargs:
+                ops = suite2p.default_ops()
+                print("No ops file specified. Reverting to suite2p.default_ops()")
+            if "path_of_ops" in kwargs and kwargs["path_of_ops"] is not None:
+                loc_to_load = kwargs["path_of_ops"]
+                ops = np.load(loc_to_load, allow_pickle=True)
+                ops = ops.item()
+            if "path_of_classifier" in kwargs:
+                db["classifier_path"] = kwargs["path_of_classifier"]
+            else:
+                print("No classifier file specified. Reverting to in-built classifier (Suite2p default).")
+            output_ops = run_suite2p(ops, db)
             # ops = suite2p.registration.metrics.get_pc_metrics(output_ops)
-            # output_ops = gen_ops(ops, db)
+            # output_ops = run_suite2p(ops, db)
             # ops = suite2p.get_pc_metrics(ops)
     def select_data_extraction_type(input_folder):
         for file in sorted(input_folder.rglob('*')):
@@ -151,7 +156,10 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         ## Organise the file hieararchy
         tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
         ## Run Suite2P on organised .tiff files
-        tiff_f_extract(tiff_paths)
+        tiff_f_extract(tiff_paths, 
+                path_of_ops = kwargs["path_of_ops"],
+                path_of_classifier = kwargs["path_of_classifier"]
+                )
     except FileExistsError:
         print("Cannot create a directory when it already exists:", output_folder)
         ## Contingencies for handling pre-existing files
@@ -168,8 +176,6 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                 select_data_extraction_type(input_folder)
                 ## Organise the file hieararchy
                 tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
-                ## Run Suite2P on organised .tiff files
-                tiff_f_extract(tiff_paths)
             ## If Suite2P folders detected, abort to avoid overwriting previous analyses
             if suite2p_check is True:
                 print(output_folder)
@@ -181,8 +187,11 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                ## Organise the file hieararchy
                tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
                time.sleep(2)
-               ## Run Suite2P on organised .tiff files
-               tiff_f_extract(tiff_paths)
+            ## Run Suite2P on organised .tiff files
+            tiff_f_extract(tiff_paths, 
+                path_of_ops = kwargs["path_of_ops"],
+                path_of_classifier = kwargs["path_of_classifier"]
+                )
         else:
             raise Warning("Unknown error when handling files.")
 
