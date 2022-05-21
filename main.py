@@ -102,6 +102,7 @@ class Experiment:
             self.folder_content = utilities.file_handling.get_content(
                 self.directory)
             self.plane_paths = index_suite2p_planes(self.directory)
+            # Make note of number of planes
             self.number_of_planes = len(self.plane_paths)
             # Create empty lists for building DataFrames later (list of dicts)
             list_of_dicts = []
@@ -111,7 +112,9 @@ class Experiment:
             # Check whether directory is the "final" dir, or a dir of sub-dirs
             check_dir = []
             for i in directory_content:
-                check_dir.append(i.is_file())
+                # Make exceptions for .pickle files
+                if i.suffix != ".pickle":
+                    check_dir.append(i.is_file())
             if any(check_dir) is True:
                 directory_content = [directory]
             # Loop through the expeirment folders and grab the relevant data
@@ -121,6 +124,9 @@ class Experiment:
             - Make multi-plane handling possible here...:
             """
             for folder in directory_content:
+                ## Ignore files
+                if folder.is_file() is True:
+                    continue
                 ### Note: In the follow script, rglob (recursive glob) is used
                 ### where files are stored in Suite2p sub-dirs several levels 
                 ### down. This ONLY works because 'folder' is specifically pointing
@@ -181,17 +187,6 @@ class Experiment:
             self.panda = pd.DataFrame.from_dict(data=list_of_dicts).transpose()
             print(f"List of dictionaries with information from {self.directory}"
                     "created and placed in DataFrame under self.panda.")
-            # Make each row accessible via object (i.e. "shortcuts")
-            self.names = self.panda.loc["folder_name"]
-            self.trigs = self.panda.loc["trigs"]
-            self.fs = self.panda.loc["fs"] # 3 dims: Plane, cell, time
-            self.ops = self.panda.loc["ops"]
-            self.stats = self.panda.loc["stats"]
-            self.iscells = self.panda.loc["iscells"]
-            self.spks = self.panda.loc["spks"]
-            self.cell_numbers = self.panda.loc["cell_numbers"]
-            self.notes = self.panda.loc["notes"]
-            print("Shortcuts created (e.g. self.fs for self.panda.loc['fs']")
             # Pass any kwargs information into dataframe for documentation.
             for i in kwargs:
                 print(f"Passing {i} = {kwargs[i]} to kwargs")
@@ -214,12 +209,25 @@ class Experiment:
                                     self.panda.loc["trigs"], 
                                     self.panda.loc["mode"])):
                     ## Pass it to the averaging function
+                    print("Averaging for experiment", self.panda.loc["folder_name"][i])
                     f_avg, f_trial, trig_trial, trig_avg = quantitative.average_signal(f, trg, md)
                     ## Insert the returned information into correct indeces
                     self.panda.loc["f_avgs"][i] = f_avg
                     self.panda.loc["f_trials"][i] = f_trial
                     self.panda.loc["trig_trials"][i] = trig_trial
                     self.panda.loc["trig_avgs"][i] = trig_avg
+                self.avgs = self.panda.loc["f_avgs"]
+            # Make each row accessible via object (i.e. "shortcuts")
+            self.names = self.panda.loc["folder_name"]
+            self.trigs = self.panda.loc["trigs"]
+            self.fs = self.panda.loc["fs"] # 3 dims: Plane, cell, time
+            self.ops = self.panda.loc["ops"]
+            self.stats = self.panda.loc["stats"]
+            self.iscells = self.panda.loc["iscells"]
+            self.spks = self.panda.loc["spks"]
+            self.cell_numbers = self.panda.loc["cell_numbers"]
+            self.notes = self.panda.loc["notes"]
+            print("Shortcuts created (e.g. self.fs for self.panda.loc['fs']")
             ## This just makes a dictionary, which may be pointless...
             self.dict = self.__dict__
         
