@@ -29,12 +29,6 @@ import options
 # import utilities
 # import options_BC_testing
 
-
-"""
-TODO Need to crop the imaging file to the trigger channel already during the
-Import_Igor phase... Maybe the class I wrote earler would be useful for this.
-"""
-
 def run_suite2p(ops, db):
     output_ops = suite2p.run_s2p(ops=ops, db=db)  # Run the actual algo...
     print("Initiating suite2p.run_s2p")
@@ -94,8 +88,6 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         ### Copy over npy files 
         for input_file in trig_paths:    
             shutil.copy2(input_file, output_folder.joinpath(input_file.name))
-    ## Run through target folder and clean it up (establishing a file hierarchy)
-        # - This is now conducted by the function utilities.file_handling.prep_file_hierarchy!
     ## Run Suite2p on each .tiff file in the file hieararchy 
     def tiff_f_extract(path_of_tiffs, **kwrags):
         tiff_num = len(path_of_tiffs)
@@ -127,7 +119,7 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
     def select_data_extraction_type(input_folder):
         for file in sorted(input_folder.rglob('*')):
             suffix = file.suffix
-            if suffix == ".tiff" or suffix == ".tif":
+            if suffix in [".tiff", ".tif"]:
                 copy_preexisting_tiffs()
                 break
             if file.suffix == ".smp" or file.suffix == ".smh":
@@ -180,13 +172,12 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                 print(output_folder)
                 warnings.warn("Suite2p-related content identified. Skipping this step.")
                 return
-            ## If .tiff files are present, index them 
+            ## If .tiff files are present, index them
             elif any_check is True:
-               pre_existing_tiffs = sorted(output_folder.rglob('*.tiff'))
+               tiff_paths = sorted(output_folder.rglob('*.tiff'))
                print(".tiff file(s) already exist here. Skipping conversion.")
                ## Organise the file hieararchy
                tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
-               time.sleep(2)
             ## Run Suite2P on organised .tiff files
             tiff_f_extract(tiff_paths, 
                 path_of_ops = kwargs["path_of_ops"],
