@@ -85,13 +85,16 @@ class file_handling:
         directory = pathlib.Path(directory)
         path_of_tiffs = sorted(directory.glob('*.tiff'))
         path_of_trigs = sorted(directory.glob('*.npy'))
+        if len(path_of_trigs) == 0 and len(path_of_tiffs) == 0:
+            return
         if len(path_of_trigs) == 0:
+            print(path_of_trigs)
             warnings.warn("No trigger channel detected. No .npy file generated.")
             for tiff in path_of_tiffs:
                 ### Step 3.1: Make folder with tiff filename
                 new_single_plane_folder = directory.joinpath(
                     tiff.stem)
-                if new_single_plane_folder.exists() == False:
+                if new_single_plane_folder.exists() is False:
                     new_single_plane_folder.mkdir()
                 ### Step 3.2: Move tiff file into folder
                 tiff_new_location = pathlib.Path(shutil.move(
@@ -103,7 +106,7 @@ class file_handling:
                 ### Step 3.1: Make folder with tiff filename
                 new_single_plane_folder = directory.joinpath(
                     tiff.stem)
-                if new_single_plane_folder.exists() == False:
+                if new_single_plane_folder.exists() is False:
                     new_single_plane_folder.mkdir()
                 ### Step 3.2: Move tiff file into folder
                 tiff_new_location = pathlib.Path(shutil.move(
@@ -145,15 +148,20 @@ class data:
         for file in input_folder.iterdir():
             img_count += 1
             if file.stem in pre_existing_content_names:
-                warnings.warn("Files with the same name (even"
-                "even if file-extension is the same). Skipping to avoid"
-                "data loss.")
+                warnings.warn("Input files and output files have the same name, skipping conversion. Please manually delete files in output folder to force conversion.")
                 continue
             else:
                 file = pathlib.Path(file).resolve()
                 img = Import_Igor.get_stack(file)
                 img_name = file.stem
-                img_arr, trigger_arr = Import_Igor.get_ch_arrays(img, crop)
+                
+                """Current target"""
+                # This is not really a good method...:
+                img_arr, trigger_arr = img.get_ch_arrays(img, crop)
+                
+                
+                
+                """This WILL be depricated: This is where you need to make a kwarg..."""
                 trigger_trace = Import_Igor.trigger_trace(trigger_arr) # Algorithmically get the trigger trace out of trigger channel
                 # save_folder = pathlib.Path(r".\Data\data_output\{}".format(img_name)) # Bit more elegant than above
                 tiff_path = output_folder.joinpath(
@@ -261,18 +269,48 @@ class data:
         
             return interpolated_trace
     # Make trigger_trace
-    def trigger_trace(trigger_arr):
+    def trigger_trace_by_frame(trigger_arr):
+        raise DeprecationWarning("Calling trigger trace from Import_Igor is depricated. Instead, please call attribute trigger_trace_frame from Import_Igor.get_stack obj instead. This may change in the future.")
+        #Binarise the trigger using frame-wise percision (fast but impercise)
+        ## Make an array of appropriate dimension
         trigger_trace_arr = np.zeros((1, trigger_arr.shape[0]))[0]
+        ## Loop through trigger image array
         for frame in range(trigger_arr.shape[0]):
             if np.any(trigger_arr[frame] > 1):
                 trigger_trace_arr[frame] = 1
             #If trigger is in two consecutive frames, just use the first one so counting is correct
             if trigger_trace_arr[frame] == 1 and trigger_trace_arr[frame-1] == 1: 
                 trigger_trace_arr[frame] = 0
-            # else:
-                # trigger_trace_arr[frame] = 0
         return trigger_trace_arr
-
+    def trigger_trace_by_line(trigger_arr):
+        raise DeprecationWarning("Calling trigger trace from Import_Igor is depricated. Instead, please call attribute trigger_trace_line from Import_Igor.get_stack obj instead. This may change in the future.")
+        #Binarise the trigger using line-wise percision (slow but guaranteed percision)
+        ## Make empty array that has dims frame_number x frame_size (for serialising each frame)
+        trigger_trace_arr = np.empty((len(trigger_arr), trigger_arr[0].size))
+        ## Loop through the input trigger array and serialise each frame
+        for n, frame in enumerate(trigger_arr):
+            serial = frame.reshape(1, frame.size)
+            ## Place that serialised data in its correct index
+            trigger_trace_arr[n] = serial
+        ## Our matrix is now an array of vectors containing serialised information from each frame
+        ## Reshape this matrix into one long array (pixel x pixel-value)
+        serial_trigger_trace = trigger_trace_arr.reshape(1, trigger_arr.size)
+        ## Then we binarise the serialised trigger data
+        binarised_trigger_trace = np.where(serial_trigger_trace > 10000, 1, 0)[0]
+        ## Boolean search for whether index n > n-1 (basically rising flank detection) 
+        trig_onset_serial = binarised_trigger_trace[:-1] > binarised_trigger_trace[1:]
+        ## Get the frame indeces for trigger onset
+        trig_onset_index = np.where(trig_onset_serial > 0)
+        ## Then divide each number in trig_onset_index by the amount of lines
+        trigg_arr_shape = trigger_arr.shape
+        lines_in_scan = trigg_arr_shape[1] * trigg_arr_shape[2]
+        frame_of_trig = np.around(trig_onset_index[0]/lines_in_scan, 0)
+        ## Convert back to frames 
+        frame_number = len(trigger_arr)
+        trig_trace = np.zeros(frame_number)
+        for i in frame_of_trig:
+            trig_trace[int(i)] = 1
+        return trig_trace
     
 # test2 = np.load(r"C:\Users\SimenLab\OneDrive - University of Sussex\Desktop\test.npy")
 # v = interpolate(test2, 300)
