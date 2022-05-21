@@ -19,7 +19,6 @@ import suite2p
 
 import Import_Igor
 import utilities
-"""Currently hard-coded..."""
 import options
 
 # import matplotlib.pyplot as plt
@@ -179,7 +178,8 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
             ## If Suite2P folders detected, abort to avoid overwriting previous analyses
             if suite2p_check is True:
                 print(output_folder)
-                raise Warning("Suite2p-related content identified. Exiting.")
+                warnings.warn("Suite2p-related content identified. Skipping this step.")
+                return
             ## If .tiff files are present, index them 
             elif any_check is True:
                pre_existing_tiffs = sorted(output_folder.rglob('*.tiff'))
