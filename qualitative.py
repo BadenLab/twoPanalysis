@@ -10,6 +10,7 @@ import pathlib
 import numpy as np 
 import pathlib
 import sklearn as sk
+from matplotlib.pyplot import cm
 # scaler = sk.preprocessing.MinMaxScaler()
 
 #Load data
@@ -36,19 +37,12 @@ def display(im3d, cmap="gray", step=1):  # Not written by me:) --> https://sciki
     
 
 def plot_heatmap(f, trigger, normalize = 1, **kwargs):
-    plt.figure(figsize=(20, 10), dpi = 200)
+    fig = plt.figure(figsize=(2,4), dpi = 200)
     
     if normalize == 1:
         def normalize(data):
-                data_normalized = (data - np.mean(data)) / np.std(data)
-                return data_normalized
+            return (data - np.mean(data)) / np.std(data)
         norm_f_array = normalize(f)
-        # norm_f_array = np.copy(f) #create duplicate to avoid overwriting original imported data matrix
-        # for i in range(f.shape[1]): 
-        #     curr_operation = scaler.transform((norm_f_array[:, i]).reshape(-1, 1)) #"""workaround"""
-        #     curr_operation = curr_operation.reshape(len(curr_operation))
-        #     norm_f_array[:, i] = curr_operation
-            
         plt.imshow(norm_f_array, aspect = 'auto', cmap = 'Greys')
     else:
         plt.imshow(f, aspect = 'auto', cmap = 'Greys')   
@@ -68,95 +62,94 @@ def plot_heatmap(f, trigger, normalize = 1, **kwargs):
                     plt.axvspan(n, n+1, facecolor=color_list[counter], alpha=0.5)
                     counter += 1
     if "events" in kwargs:
+        if "manual_trigger" in kwargs:
+            trigger = kwargs["manual_trigger"]
         # To plot lines for stimulus event
         for n, i in enumerate(trigger):
             if trigger[n] == 1:
-                    plt.axvspan(n, n+1)
+                    plt.axvspan(n, n+0.1)
     plt.show()
-    
-    return norm_f_array
+    return fig
 
-    """This doesn't work either
-    Try this: https://stackoverflow.com/questions/5628055/execute-statement-every-n-iterations-in-python
-    """
+    # """This doesn't work either
+    # Try this: https://stackoverflow.com/questions/5628055/execute-statement-every-n-iterations-in-python
+    # """
     # for n, i in enumerate(trigger[::2]):
     #     if trigger[n] == 1:
     #         plt.axvspan(n, n+1, facecolor='g', alpha=0.5)
     
 
-def plot_traces(output_ops, f_cells, f_neuropils, spks):
-    plt.figure(figsize=[20,20])
+def plot_traces_outdated(f_cells, spks): #f_neuropils, spks):
+    fig = plt.figure(figsize=[8,8])
     plt.suptitle("Fluorescence and Deconvolved Traces for Different ROIs", y=0.92);
-    rois = np.arange(len(f_cells))[::20] # Sets how many of the ROIs to sample from for plotting
+    rois = np.arange(len(f_cells)) # Sets how many of the ROIs to sample from for plotting
     for i, roi in enumerate(rois):
-        plt.subplot(len(rois), 1, i+1, )
+        fig, axs = plt.subplot(len(rois), 1, i+1, )
         f = f_cells[roi]
-        f_neu = f_neuropils[roi]
-        sp = spks[roi]
+        # f_neu = f_neuropils[roi]
+        # sp = spks[roi]
         # Adjust spks range to match range of fluroescence traces
-        fmax = np.maximum(f.max(), f_neu.max())
-        fmin = np.minimum(f.min(), f_neu.min())
-        frange = fmax - fmin 
-        sp /= sp.max()
-        sp *= frange
-        plt.plot(f, label="Cell Fluorescence")
-        plt.plot(f_neu, label="Neuropil Fluorescence")
-        plt.plot(sp + fmin, label="Deconvolved")
+        # fmax = np.maximum(f.max(), f_neu.max())
+        # fmin = np.minimum(f.min(), f_neu.min())
+        # fmax = f.max()
+        # fmin = f.min()
+        # frange = fmax - fmin 
+        # sp /= sp.max()
+        # sp *= frange
+        axs = plt.plot(f, label="Cell Fluorescence")
+        # plt.plot(f_neu, label="Neuropil Fluorescence")
+        # plt.plot(sp + fmin, label="Deconvolved")
+        axs.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
         plt.xticks(np.arange(0, f_cells.shape[1], f_cells.shape[1]/10))
         plt.ylabel(f"ROI {roi}", rotation=0)
         plt.xlabel("frame")
         if i == 0:
             plt.legend(bbox_to_anchor=(0.93, 2))
-
-
+            
+def plot_traces(fs, from_num, to_num):
+    f_cells = fs[from_num:to_num]
+    num_to_plot = len(f_cells)
+    num_index = np.arange(from_num, to_num)
+    color = iter(cm.rainbow(np.linspace(0, 1, num_to_plot)))
+    fig, axs = plt.subplots(len(f_cells), figsize=(5,5), sharex = True)
+    # fig.suptitle('Vertically stacked subplots')
+    for n, i in enumerate(f_cells):
+        c = next(color)
+        axs[n].plot(i, c = c)
+        axs[n].spines['top'].set_visible(False)
+        axs[n].spines['bottom'].set_visible(False)
+        axs[n].spines['left'].set_visible(False)
+        axs[n].spines['right'].set_visible(False)
+        # axs[n].axes.get_yaxis().set_visible(False)
+        axs[n].set_yticklabels([])
+        axs[n].set_yticklabels([])
+        axs[n].set_yticks([])
+        axs[n].axes.get_xaxis().set_visible(False)
+        axs[n].set_ylabel(f"ROI {num_index[n]}", rotation = 'horizontal',
+                          fontsize = 'x-small', va = 'center_baseline')
+    return plt.show()
+# plot_traces(pand.loc["fs"][0], 10, 20)
+# plot_traces(pand.loc["fs"][0], pand.loc["spks"][0])
 
 def plot_averages(f_avg, f_trial, trig_trial, trig_avg, roi): #, trigger, mode, ):
-    """
-    
-    """
-    """
-    TODO
-    Fix the plotting of trigger, as it now is interpolated and plots the entire
-    "series" (which is not real, because trigger should just last a single frame)
-    thereby making the plot confusing to read.
-    
-    Could average the onset of every trigger 
-    """
     fig, ax1 = plt.subplots(figsize= (12, 8), dpi = 100)
     ax2 = ax1.twinx()
-    
-    # plt.figure()
-    """
-    NB
-    The below line currently only plots the average of all triggers per trial, 
-    binarised such that n<1 = 0
-    """
-    # trig_avg = np.average(trigs_for_trial, axis = 0)
-    # trig_binary = np.where(trig_avg<1, 0, 1)
     beauty_trig = np.zeros((len(trig_avg)))
     for n, i in enumerate(trig_avg):
         if trig_avg[n-1] == 0 and trig_avg[n] == 1:
             beauty_trig[n] = 1
         if trig_avg[n-2] == 1 and trig_avg[n-1] == 1 and trig_avg[n] == 0:
             trig_avg[n] = 0
-        ## Old
-        # if trig_avg[n] == 1:
-        #     beauty_trig[n] = 1
-        # if trig_avg[n] == 1 and trig_avg[n-1] == 1: 
-        #     trig_avg[n] = 0
-        # else:
-        #     trig_avg[n] = 0
-    # ax2.plot(trig_avg)
+    ax2.plot(trig_avg)
+
     ## Find, on average, when the trigger occurs and plot at its onset
     # avg_trig_distance = round(np.average(np.gradient(trig_frames)))
-    
-    ax2.plot(beauty_trig)
-    # ax2.plot(trig_binary)
     for i in range(f_trial.shape[0]):
         ax1.plot(f_trial[i][roi], color = 'lightgrey')
     ax1.plot(f_avg[roi], color = 'r')
     ax2.set_ylim(0, 1)
-    
+    ax2.set_axis_off()
     plt.show()
      
     
