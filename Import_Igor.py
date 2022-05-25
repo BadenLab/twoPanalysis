@@ -81,6 +81,7 @@ class get_stack:
             self.channel1 = self.channel1[:, :, resolution_map["512"][0]:res+resolution_map["512"][1]]        # "Safe" setting, even if output res will be a bit lower than ideal
         if res == "likely_fine":
             self.channel1 = self.channel1[:, :, resolution_map["likely_fine"][0]:res+resolution_map["likely_fine"][1]]        # "Safe" setting, even if output res will be a bit lower than ideal
+        print("Selected resolution:", res)
         return self.channel1, self.channel2
 
     def header_dict(stack_obj):
@@ -118,7 +119,7 @@ class get_stack:
         serial_trigger_trace = trigger_trace_arr.reshape(1, self.channel2.size)
         ## Then we binarise the serialised trigger data
         binarised_trigger_trace = np.where(serial_trigger_trace > 10000, 1, 0)[0]
-        ## Boolean search for whether index n > n-1 (basically rising flank detection) 
+        ## Boolean search for whether index n > n-1 (basically rising flank detection)
         trig_onset_serial = binarised_trigger_trace[:-1] > binarised_trigger_trace[1:]
         ## Get the frame indeces for trigger onset
         trig_onset_index = np.where(trig_onset_serial > 0)
