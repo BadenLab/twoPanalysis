@@ -18,8 +18,7 @@ def load_data(path):
 
 def data_struct(npz):
     npz.files
-    
-# exp_test = load_data(data_path)
+
 
 def average_signal(f, trigger, mode, **kwargs):
     """
@@ -48,13 +47,7 @@ def average_signal(f, trigger, mode, **kwargs):
     averaged_traces, sliced_traces, sliced_triggers
 
     """
-    
-    """
-    Take the f trace and from the first trigger, crop out the time interval
-    at every 'mode'-interval. Then do this n amount of times until the last 
-    trigger, and overlap/average.
-    
-    """
+    # Set up/correct some parameters
     if trigger.ndim == 2:
         trigger = trigger[0]
     if f.dtype != 'float64':
@@ -81,42 +74,29 @@ def average_signal(f, trigger, mode, **kwargs):
         # interpolation_coefficient = 10000
         interpolation_coefficient = num_of_frames * 100 #Upscale by this value
     
-    cropped_f, cropped_trig = utilities.data.crop(f, trigger, 0, 0)
-    
     # Sometimes the f arrays are misalinged by a single frame, due to triggers
     # occasionally being temporally misaligned. The following algorithm handles
     # this scenario by upsampling the data to a specific temporal resolution
     # (e.g., all arrays are 1000 frames).
     def interpolate_each_trace(f, mode, repeats, interpolation_granularity):
         # Create empty array with the correct shape
-        loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
+        loops_list = np.empty([repeats, f.shape[0]-1, interpolation_granularity])
+        print("Averaging: ")
         for rep in range(repeats):
-            
             from_index = trig_frames[(rep)*mode]
             to_index = trig_frames[(rep+1)*mode]
-            print("From:", from_index, "to:", to_index, "for rep", rep)
+            print("From", from_index, "to", to_index, "for rep", rep)
             activity_segment = f[:, from_index:to_index]
-            
-            # activity_segment = f[:, trig_frames[(
-            #     rep-1)*mode]:trig_frames[rep*mode-1]]
-            
             interpolated_activitiy_segment = utilities.data.interpolate(activity_segment, output_trace_resolution = interpolation_granularity)
             loops_list[rep] = interpolated_activitiy_segment
         return loops_list
-        # return nth_f_loop, nth_trig_loop
     def slice_triggers(c, mode, repeats, interpolation_granularity):
         trig_list = np.empty([round(repeats), interpolation_granularity])
         for rep in range((repeats)):
-            # trigger_segment = trigger[trig_frames[(
-                # rep-1)*mode]:trig_frames[rep*mode-1]]
-            
             from_index = trig_frames[(rep)*mode]
             to_index = trig_frames[(rep+1)*mode]
             trigger_segment = trigger[from_index:to_index]
-            # print(trigger_segment)
-            # print("Trig segment shape is", trigger_segment.shape)
             interpolated_trig_segment = utilities.data.interpolate(trigger_segment, output_trace_resolution = interpolation_granularity)
-            
             trig_list[rep] = interpolated_trig_segment
         return trig_list
     
@@ -134,4 +114,3 @@ def average_signal(f, trigger, mode, **kwargs):
     trial_triggers = np.where(trial_triggers>0, 1, 0) # Binarise 
     averaged_triggers = np.where(averaged_triggers>0, 1, 0) # Binarise 
     return averaged_traces, trial_traces, trial_triggers, averaged_triggers
-
