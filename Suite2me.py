@@ -120,14 +120,15 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         for file in sorted(input_folder.rglob('*')):
             suffix = file.suffix
             if suffix in [".tiff", ".tif"]:
+                print(".tiff(s) identified. Copying them to ouput directory.")
                 copy_preexisting_tiffs()
                 break
             if file.suffix == ".smp" or file.suffix == ".smh":
-                # print("Igor files identified. Initiating relevant function...")
+                print("Igor file(s) identified. Initiating gen_tiffs_from_igor() function...")
                 utilities.data.gen_tiffs_from_igor(input_folder, output_folder, crop)
                 break
             else:
-                raise TypeError("Filetype not specified. Please select with filetype = ...")
+                raise FileNotFoundError("Appropriate filetype not found (tiff, Igor binary).")
     ## Check if folder already exists
     input_folder = pathlib.Path(input_folder)
     # save_dir = pathlib.Path(save_dir).resolve()
