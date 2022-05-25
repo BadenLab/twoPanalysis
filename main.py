@@ -110,19 +110,11 @@ class Experiment:
             # Return the immediate content of the directory (i.e. not recursively)
             directory_content = sorted(directory.glob('*'))
             # Check whether directory is the "final" dir, or a dir of sub-dirs
-            check_dir = []
-            for i in directory_content:
-                # Make exceptions for .pickle files
-                if i.suffix != ".pickle":
-                    check_dir.append(i.is_file())
-            if any(check_dir) is True:
+            check_dir = [i.is_file() for i in directory_content if i.suffix != ".pickle"]
+            if any(check_dir):
                 directory_content = [directory]
             # Loop through the expeirment folders and grab the relevant data
             print("Retrieving information from:")
-            """
-            TODO
-            - Make multi-plane handling possible here...:
-            """
             for folder in directory_content:
                 ## Ignore files
                 if folder.is_file() is True:
@@ -139,10 +131,12 @@ class Experiment:
                 ## Index and get F trace
                 f_index = sorted(folder.rglob('*/plane*/F.npy'))
                 fs = build_from_index(f_index)[0]
-                ## Identify how mnay cells there are
+                ## Identify how many cells there are
                 cell_number = fs.shape[0]
+                ## Identify how many frames there are
+                frame_number = fs.shape[1]
                 ## Index and get trigger trace
-                trig_index = sorted(folder.glob(f"*.npy"))
+                trig_index = sorted(folder.glob("*.npy"))
                 trigs = build_from_index((trig_index))
                 ## Index and get iscell
                 iscell_index = sorted(folder.rglob('*/plane*/iscell.npy'))
@@ -164,6 +158,7 @@ class Experiment:
                     "f_index": f_index,
                     "fs": fs,
                     "cell_numbers" : cell_number,
+                    "frame_number" : frame_number,
                     "tiff_index": tiff_index,
                     "trig_index": trig_index,
                     "trigs": trigs,
@@ -217,10 +212,12 @@ class Experiment:
                     self.panda.loc["trig_trials"][i] = trig_trial
                     self.panda.loc["trig_avgs"][i] = trig_avg
                 self.avgs = self.panda.loc["f_avgs"]
+                self.avg_trigs = self.panda.loc["trig_avgs"]
             # Make each row accessible via object (i.e. "shortcuts")
             self.names = self.panda.loc["folder_name"]
             self.trigs = self.panda.loc["trigs"]
             self.fs = self.panda.loc["fs"] # 3 dims: Plane, cell, time
+            self.frames = self.panda.loc["frame_number"]
             self.ops = self.panda.loc["ops"]
             self.stats = self.panda.loc["stats"]
             self.iscells = self.panda.loc["iscells"]
@@ -228,8 +225,8 @@ class Experiment:
             self.cell_numbers = self.panda.loc["cell_numbers"]
             self.notes = self.panda.loc["notes"]
             print("Shortcuts created (e.g. self.fs for self.panda.loc['fs']")
-            ## This just makes a dictionary, which may be pointless...
-            self.dict = self.__dict__
+            # ## This just makes a dictionary, which may be pointless...
+            # self.dict = self.__dict__
         
         # Generate the information for pandas DataFrame based on class input
         execute_data_construction_steps()
