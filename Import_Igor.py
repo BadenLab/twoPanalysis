@@ -65,6 +65,7 @@ class get_stack:
         ## down to the resolution we want. Because this artefact may be dependent
         ## on the selected resolution in ScanM, we will make a quick LUT to map 
         ## resolution down to crop. Fill in as needed...
+        ## Lookup table, look up table
         resolution_map = { # Read tuple as left_crop, right_crop
             "128": (34, 32),
             "256": (28, 28),
@@ -72,7 +73,7 @@ class get_stack:
             "likely_fine": (35, 30),
             "no_crop": (),
             }
-        # NOTE: Cropping note needed on y-axis   
+        # NOTE: Cropping note needed on y-axis
         if res == 128:
             self.channel1 = self.channel1[:, :, resolution_map["128"][0]:res+resolution_map["128"][1]]
         if res == 256:

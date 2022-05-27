@@ -38,7 +38,7 @@ def average_signal(f, trigger, mode, **kwargs):
     **kwargs
     --------
     interpolation_granularity : int 
-        Default: 10000 The amount of points to generate after interpolation, independent of 
+        Default: 100 x frame_number. The amount of points to generate after interpolation, independent of 
         what the original input is. Can be specified to any value (but should
         be used carefully...)
 
@@ -80,7 +80,7 @@ def average_signal(f, trigger, mode, **kwargs):
     # (e.g., all arrays are 1000 frames).
     def interpolate_each_trace(f, mode, repeats, interpolation_granularity):
         # Create empty array with the correct shape
-        loops_list = np.empty([repeats, f.shape[0]-1, interpolation_granularity])
+        loops_list = np.empty([repeats, f.shape[0], interpolation_granularity])
         print("Averaging: ")
         for rep in range(repeats):
             from_index = trig_frames[(rep)*mode]

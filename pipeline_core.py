@@ -8,26 +8,112 @@ Credits to: https://www.github.com/MouseLand/suite2p/blob/main/jupyter/run_suite
 """
 
 import os
-import numpy as np
-import pathlib
-import tifffile
-import suite2p
+import time
 import shutil
 import warnings
-import time
+import pathlib
+import numpy as np
+import tifffile
 import suite2p
-
 import Import_Igor
-import utilities
-import options
 
-# import matplotlib.pyplot as plt
-# import sys
+## Algorithmically generate .tiffs and .npy (image and trigger) from Igor 
+def gen_tiffs_from_igor(input_folder, output_folder, crop, **kwargs):
+    input_folder = pathlib.Path(input_folder)
+    output_folder = pathlib.Path(output_folder)
+    img_count = 0
+    ## Ensuren no dataloss by skipping conversion where conversion has 
+    ## already taken place 
+    pre_existing_content = sorted(output_folder.rglob('*'))
+    pre_existing_content_names = []
+    for i in pre_existing_content:
+        pre_existing_content_names.append(i.stem)
+    for file in input_folder.glob('*.smp'):
+        if file.with_suffix(".smh").exists() is False:
+            raise FileNotFoundError(f"Could not find accompanying header (.smh) file for {file} in {input_folder}.")
+        img_count += 1
+        if file.stem in pre_existing_content_names:
+            warnings.warn("Input files and output files have the same name, skipping conversion. Please manually delete files in output folder to force conversion.")
+            continue
+        else:
+            file = pathlib.Path(file).resolve()
+            img = Import_Igor.get_stack(file)
+            img_name = file.stem
+            img_arr, trigger_arr = img.ch_arrays(crop)
+            ## Select precision of trigger trace to 
+            ## algorithmically get the trigger trace out of trigger channel
+            if "trigger_precision" in kwargs:
+                if kwargs["trigger_precision"] == "line":
+                    trigger_trace = img.trigger_trace_line()
+                if kwargs["trigger_precision"] == "frame":
+                    trigger_trace = img.trigger_trace_frame()
+            # Default to line-wise precision
+            else:
+                trigger_trace = img.trigger_trace_line()
+            # save_folder = pathlib.Path(r".\Data\data_output\{}".format(img_name)) # Bit more elegant than above
+            tiff_path = output_folder.joinpath(
+                img_name).with_suffix(".tiff")
+            trig_path = output_folder.joinpath(
+                img_name).with_suffix(".npy")
+            try:
+                tifffile.imwrite(tiff_path, img_arr)
+            except FileNotFoundError:
+                os.mkdir(tiff_path.parent)
+            np.save(trig_path, trigger_trace)
+            if "pickle" in kwargs and kwargs["pickle"] is True:
+                img_obj_path = output_folder.joinpath(
+                    "TEMP_pickle").with_suffix(".pickle")
+                with open(img_obj_path, 'wb') as f:
+                    pickle.dump(img, f)
+            del img, img_name, img_arr, trigger_arr, file
+        if img_count == 0:
+            raise TypeError("No Igor .smh or .smp files were identified!")
 
-# import matplotlib as mpl
-
-# import utilities
-# import options_BC_testing
+def prep_file_hierarchy(directory):
+    tiff_paths = []
+    trig_paths = []
+    directory = pathlib.Path(directory)
+    path_of_tiffs = sorted(directory.glob('*.tiff'))
+    path_of_trigs = sorted(directory.glob('*.npy'))
+    if len(path_of_trigs) == 0 and len(path_of_tiffs) == 0:
+        print("No files found. Exiting.")
+        return
+    if len(path_of_trigs) == 0:
+        print(path_of_trigs)
+        warnings.warn("No .npy file detected. No trigger channel generated.")
+        for tiff in path_of_tiffs:
+            ### Step 3.1: Make folder with tiff filename
+            new_single_plane_folder = directory.joinpath(
+                tiff.stem)
+            if new_single_plane_folder.exists() is False:
+                new_single_plane_folder.mkdir()
+            ### Step 3.2: Move tiff file into folder
+            tiff_new_location = pathlib.Path(shutil.move(
+                tiff, new_single_plane_folder))
+            current_tiff_name = tiff_new_location.stem
+            tiff_paths.append(current_tiff_name)
+    else:
+        for tiff, trig in zip(path_of_tiffs, path_of_trigs):
+            ### Step 3.1: Make folder with tiff filename
+            new_single_plane_folder = directory.joinpath(
+                tiff.stem)
+            if new_single_plane_folder.exists() is False:
+                new_single_plane_folder.mkdir()
+            ### Step 3.2: Move tiff file into folder
+            tiff_new_location = pathlib.Path(shutil.move(
+                tiff, new_single_plane_folder))
+            current_tiff_name = tiff_new_location.stem
+            tiff_paths.append(current_tiff_name)
+            ### Step 3.3: Move .npy file (trigger trace) into folder 
+            trig = pathlib.Path(trig)
+            ### Step 3.2: Move trig file into folder
+            trig_new_location = pathlib.Path(shutil.move(
+                trig, new_single_plane_folder)).with_suffix(".npy")
+            current_trig_name = trig_new_location.stem
+            trig_paths.append(current_trig_name)
+    path_of_tiffs = sorted(directory.rglob('*.tiff'))
+    path_of_trigs = sorted(directory.rglob('*.npy'))
+    return path_of_tiffs, path_of_trigs
 
 def run_suite2p(ops, db):
     output_ops = suite2p.run_s2p(ops=ops, db=db)  # Run the actual algo...
@@ -125,7 +211,7 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                 break
             if file.suffix == ".smp" or file.suffix == ".smh":
                 print("Igor file(s) identified. Initiating gen_tiffs_from_igor() function...")
-                utilities.data.gen_tiffs_from_igor(input_folder, output_folder, crop)
+                gen_tiffs_from_igor(input_folder, output_folder, crop, **kwargs)
                 break
             else:
                 raise FileNotFoundError("Appropriate filetype not found (tiff, Igor binary).")
@@ -146,7 +232,7 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
         ## Fill directory with data:
         select_data_extraction_type(input_folder)    
         ## Organise the file hieararchy
-        tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
+        tiff_paths, trig_paths = prep_file_hierarchy(output_folder)
         ## Run Suite2P on organised .tiff files
         tiff_f_extract(tiff_paths, 
                 path_of_ops = kwargs["path_of_ops"],
@@ -167,7 +253,7 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                 ## Fill directory with data:
                 select_data_extraction_type(input_folder)
                 ## Organise the file hieararchy
-                tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
+                tiff_paths, trig_paths = prep_file_hierarchy(output_folder)
             ## If Suite2P folders detected, abort to avoid overwriting previous analyses
             if suite2p_check is True:
                 print(output_folder)
@@ -178,7 +264,7 @@ def extract_singleplane(input_folder, output_folder, crop, **kwargs):
                tiff_paths = sorted(output_folder.rglob('*.tiff'))
                print(".tiff file(s) already exist here. Skipping conversion.")
                ## Organise the file hieararchy
-               tiff_paths, trig_paths = utilities.file_handling.prep_file_hierarchy(output_folder)
+               tiff_paths, trig_paths = prep_file_hierarchy(output_folder)
             ## Run Suite2P on organised .tiff files
             tiff_f_extract(tiff_paths, 
                 path_of_ops = kwargs["path_of_ops"],

@@ -109,7 +109,8 @@ class Experiment:
             list_of_names = []
             # Return the immediate content of the directory (i.e. not recursively)
             directory_content = sorted(directory.glob('*'))
-            # Check whether directory is the "final" dir, or a dir of sub-dirs
+            # Check whether directory is the "final" dir, or a dir of sub-dirs (ignore .pickle
+            # which may already be created...)
             check_dir = [i.is_file() for i in directory_content if i.suffix != ".pickle"]
             if any(check_dir):
                 directory_content = [directory]
@@ -118,12 +119,12 @@ class Experiment:
             for folder in directory_content:
                 ## Ignore files
                 if folder.is_file() is True:
-                    continue
-                ### Note: In the follow script, rglob (recursive glob) is used
-                ### where files are stored in Suite2p sub-dirs several levels 
+                    continue # Simply skips to next entry in directory_content
+                ### NOTE: In the follow script, rglob (recursive glob) is used
+                ### where files are stored in Suite2p sub-dirs several levels
                 ### down. This ONLY works because 'folder' is specifically pointing
-                ### to a directory containing a single Suite2p folder. Otherwise, 
-                ### this would cause absolute chaos (tons of files indexed). 
+                ### to a directory containing a single Suite2p folder. Otherwise,
+                ### this would cause absolute chaos (with tons of files indexed).
                 print("  -  ", folder)
                 folder_name = folder.name
                 ## Index .tiff file
