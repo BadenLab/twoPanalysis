@@ -2,7 +2,7 @@
 A pipeline tailored for automatically pre-processing 2-photon imaging stacks from Igor Pro by Wavemetrics for ROI segmetnation and extraction via [Suite2p](https://github.com/MouseLand/suite2p)'s API, allowing subsequent analysis through custom Python scripts. This repository is actively in development as part of a PhD project.
 
 Credits:
-- [processing_pypeline](https://github.com/eulerlab/processing_pypeline): functions to process scanM files (experimental data) with python hosted by [Euler lab](https://github.com/eulerlab) and written by [amchags](https://github.com/amchagas)
+- [processing_pypeline](https://github.com/eulerlab/processing_pypeline): functions to process scanM files (experimental data) with Python hosted by [Euler lab](https://github.com/eulerlab) and written by [amchags](https://github.com/amchagas)
 - [Suite2p](https://github.com/MouseLand/suite2p): Open-source software for registration, cell detection, spike detection, and interactive GUI hosted by [MouseLand](https://github.com/MouseLand)
 
 
