@@ -6,16 +6,14 @@ Created on Mon Dec 13 17:54:30 2021
 """
 import os
 import pathlib
-import pathlib
-import os
 import numpy as np 
 import processing_pypeline.readScanM as rsm
 
-curr_path = pathlib.Path.cwd()
-this_path = pathlib.Path(__file__).resolve().parent
-os.chdir(this_path)
-
 class get_stack:
+    raise DeprecationWarning("Calling get_stack class from Import_Igor.py is depricated. Please import and call from pipeline_core.py instead.")
+    curr_path = pathlib.Path.cwd()
+    this_path = pathlib.Path(__file__).resolve().parent
+    os.chdir(this_path)
     # This class is used in the .smh+.smp to .tiff conversion process, 
     # as well as for constructing the trigger signal. 
     def __init__(self, file_path):

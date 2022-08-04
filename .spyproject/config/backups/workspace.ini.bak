@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['main.py', 'Suite2me.py', 'utilities.py', 'Import_Igor.py', 'database.py', 'quantitative.py', 'qualitative.py', 'for meeting.py', 'options_BC_testing.py', 'options.py', '..\\..\\..\\..\\..\\miniconda3\\lib\\shutil.py']
+recent_files = ['main.py', 'utilities.py', 'Import_Igor.py', 'quantitative.py', 'qualitative.py', '..\\..\\..\\..\\..\\miniconda3\\lib\\shutil.py']
 
 [main]
 version = 0.2.0
